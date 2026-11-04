@@ -1,264 +1,263 @@
 <template>
-  <ion-page>
-    <!-- Header Mobile Minimalista do Prestador de Serviço -->
-    <ion-header class="provider-header ion-no-border">
-      <ion-toolbar class="header-toolbar">
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/" class="back-btn"></ion-back-button>
-        </ion-buttons>
-
-        <div class="brand-block" @click="goToHome">
-          <span class="neon-brand">+serve</span>
-          <span class="slash-separator">/</span>
-          <span class="role-title">Prestador</span>
-        </div>
-
-        <ion-buttons slot="end">
-          <!-- Saldo no topo com atalho para a aba Carteira -->
-          <div class="wallet-badge-minimal" @click="setTab('wallet')">
-            <span class="badge-label">Saldo</span>
-            <span class="badge-value">{{ formatCurrency(appStore.walletBalance) }}</span>
+  <ion-page class="provider-page-root">
+    <!-- Header Fixo (+ SERVE / TRABALHADOR) -->
+    <ion-header class="ion-no-border provider-header">
+      <ion-toolbar class="provider-toolbar">
+        <div class="header-inner">
+          <div class="brand-block" @click="goToHome">
+            <span class="neon-plus">+</span>
+            <span class="brand-name">SERVE</span>
+            <span class="worker-mode-tag">TRABALHADOR</span>
           </div>
 
-          <ion-button fill="clear" size="small" class="icon-nav-btn" @click="handleToggleRole" title="Alternar Perfil">
-            <ion-icon slot="icon-only" :icon="swapHorizontalOutline"></ion-icon>
-          </ion-button>
-        </ion-buttons>
+          <div class="header-right-actions">
+            <div class="wallet-pill-btn" @click="currentTab = 'wallet'" title="Ver Saldo da Carteira">
+              <span class="wallet-tiny-label">Saldo</span>
+              <span class="wallet-value-text">{{ formatCurrency(store.walletBalance) }}</span>
+            </div>
+
+            <button class="switch-to-client-btn" @click="goToClientDashboard" title="Ir para Painel do Cliente">
+              <ion-icon :icon="personCircleOutline"></ion-icon>
+              <span class="btn-text-hide-sm">Modo Cliente</span>
+            </button>
+          </div>
+        </div>
       </ion-toolbar>
 
-      <!-- Sub-Barra de Navegação: Oportunidades, Impulsos, Carteira, Perfil -->
-      <div class="provider-subnav">
-        <button
-          class="subnav-btn"
-          :class="{ active: currentTab === 'leads' }"
-          @click="setTab('leads')"
-        >
-          <ion-icon :icon="flashOutline"></ion-icon>
-          <span>Pedidos</span>
-        </button>
+      <!-- Sub-Barra de Navegação Mobile-First -->
+      <div class="subnav-container">
+        <div class="subnav-inner">
+          <button
+            class="subnav-item"
+            :class="{ active: currentTab === 'leads' }"
+            @click="currentTab = 'leads'"
+          >
+            <ion-icon :icon="flashOutline"></ion-icon>
+            <span>Trabalhos</span>
+            <span v-if="store.acceptedJobs.length" class="subnav-badge">{{ store.acceptedJobs.length }}</span>
+          </button>
 
-        <button
-          class="subnav-btn"
-          :class="{ active: currentTab === 'boosts' }"
-          @click="setTab('boosts')"
-        >
-          <ion-icon :icon="rocketOutline"></ion-icon>
-          <span>Impulsos</span>
-        </button>
+          <button
+            class="subnav-item"
+            :class="{ active: currentTab === 'wallet' }"
+            @click="currentTab = 'wallet'"
+          >
+            <ion-icon :icon="walletOutline"></ion-icon>
+            <span>Carteira</span>
+          </button>
 
-        <button
-          class="subnav-btn"
-          :class="{ active: currentTab === 'wallet' }"
-          @click="setTab('wallet')"
-        >
-          <ion-icon :icon="walletOutline"></ion-icon>
-          <span>Carteira</span>
-        </button>
+          <button
+            class="subnav-item"
+            :class="{ active: currentTab === 'boosts' }"
+            @click="currentTab = 'boosts'"
+          >
+            <ion-icon :icon="rocketOutline"></ion-icon>
+            <span>Impulsos</span>
+          </button>
 
-        <button
-          class="subnav-btn"
-          :class="{ active: currentTab === 'profile' }"
-          @click="setTab('profile')"
-        >
-          <ion-icon :icon="personCircleOutline"></ion-icon>
-          <span>Perfil</span>
-        </button>
+          <button
+            class="subnav-item"
+            :class="{ active: currentTab === 'profile' }"
+            @click="currentTab = 'profile'"
+          >
+            <ion-icon :icon="personCircleOutline"></ion-icon>
+            <span>Perfil</span>
+          </button>
+        </div>
       </div>
     </ion-header>
 
-    <ion-content :fullscreen="true" class="provider-content ion-padding">
-      <div class="content-container">
+    <ion-content :fullscreen="true" class="provider-content">
+      <div class="page-wrapper">
 
-        <!-- ==================== ABA 1: PEDIDOS / OPORTUNIDADES ==================== -->
-        <section v-if="currentTab === 'leads'" class="tab-section">
-          <div class="section-title-row">
-            <div>
-              <h2 class="section-title">Oportunidades em Aberto</h2>
-              <p class="section-subtitle">Serviços solicitados por clientes na sua região</p>
+        <!-- ================= ABA 1: TRABALHOS (ATIVOS + DISPONÍVEIS) ================= -->
+        <section v-if="currentTab === 'leads'" class="tab-pane">
+
+          <!-- SEÇÃO DE TRABALHOS ACEITOS / EM ANDAMENTO (FECHAMENTO DE FLUXO DO PRESTADOR) -->
+          <div v-if="store.acceptedJobs.length > 0" class="accepted-jobs-section">
+            <div class="section-top-bar">
+              <div>
+                <h2 class="pane-title">Em Andamento ({{ store.acceptedJobs.length }})</h2>
+                <p class="pane-subtitle">Combine detalhes no chat e finalize para liberar o PIX</p>
+              </div>
             </div>
-            <span class="leads-counter">{{ openRequests.length }} disponíveis</span>
+
+            <div class="accepted-stack">
+              <div
+                v-for="actJob in store.acceptedJobs"
+                :key="actJob.id"
+                class="accepted-job-card"
+              >
+                <div class="accepted-top-row">
+                  <span class="accepted-cat-pill">{{ actJob.category }} • {{ actJob.subType }}</span>
+                  <span class="accepted-status-tag">{{ actJob.status === 'COMPLETED' ? '✓ Finalizado' : '⚡ Em Atendimento' }}</span>
+                </div>
+
+                <h3 class="accepted-title">{{ actJob.title }}</h3>
+                <p class="accepted-meta">📅 {{ actJob.date }} às {{ actJob.time }} • 📍 {{ actJob.location }}</p>
+
+                <div class="accepted-client-bar">
+                  <div class="client-mini-box">
+                    <img :src="actJob.clientAvatar || 'https://i.pravatar.cc/150?img=32'" class="client-mini-avatar" alt="Cliente" />
+                    <div>
+                      <strong class="client-mini-name">{{ actJob.clientName || 'Cliente +SERVE' }}</strong>
+                      <span class="client-mini-val">Valor líquido (95%): {{ formatCurrency(actJob.budget * 0.95) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="accepted-actions-row">
+                    <button class="btn-chat-client" @click="openChatWithClient(actJob)">
+                      <ion-icon :icon="chatbubbleOutline"></ion-icon>
+                      <span>Chat</span>
+                    </button>
+                    <button
+                      v-if="actJob.status !== 'COMPLETED'"
+                      class="btn-finish-job"
+                      @click="finishWorkerJob(actJob)"
+                    >
+                      <ion-icon :icon="checkmarkOutline"></ion-icon>
+                      <span>Concluir e Receber</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Empty State -->
-          <div v-if="openRequests.length === 0" class="empty-box">
-            <ion-icon :icon="searchOutline" class="empty-icon"></ion-icon>
-            <h3>Nenhum pedido aberto no momento</h3>
-            <p>Quando clientes da sua região publicarem pedidos, eles surgirão aqui.</p>
+          <!-- FILTRO DE CATEGORIAS PARA TRABALHOS DISPONÍVEIS -->
+          <div class="section-top-bar">
+            <div>
+              <h2 class="pane-title">Chamados Disponíveis</h2>
+              <p class="pane-subtitle">Solicitações abertas na sua região em tempo real</p>
+            </div>
+            <span class="leads-counter-pill">{{ filteredJobLeads.length }} disponíveis</span>
           </div>
 
-          <!-- Lista de Pedidos -->
-          <div v-else class="leads-list">
-            <ion-card
-              v-for="req in openRequests"
-              :key="req.id"
-              class="lead-card"
+          <div class="filter-pills-scroll">
+            <button
+              v-for="catFilter in ['Todos', 'Garçom', 'Eletricista', 'Diarista', 'Encanador', 'Reformas']"
+              :key="catFilter"
+              class="cat-filter-pill"
+              :class="{ active: selectedJobFilter === catFilter }"
+              @click="selectedJobFilter = catFilter"
             >
-              <ion-card-content class="lead-card-body">
-                <div class="lead-top-row">
-                  <span class="category-pill">{{ req.category }}</span>
-                  <span class="anonymous-client">
-                    <ion-icon :icon="shieldCheckmarkOutline"></ion-icon> Cliente Anônimo
-                  </span>
-                </div>
-
-                <div class="lead-middle">
-                  <div class="lead-location">
-                    <ion-icon :icon="locationOutline"></ion-icon>
-                    <span>{{ req.location || 'Local a combinar' }}</span>
-                  </div>
-                  <span class="lead-datetime">
-                    <ion-icon :icon="calendarOutline"></ion-icon>
-                    {{ req.date || 'Hoje' }} às {{ req.time || '14:30' }}
-                  </span>
-                </div>
-
-                <div class="lead-budget-block">
-                  <div class="budget-info">
-                    <span class="budget-label">Orçamento Oferecido</span>
-                    <span class="budget-amount">{{ formatCurrency(req.budget) }}</span>
-                  </div>
-                  <div class="tax-info">
-                    Taxa de desbloqueio (5%):
-                    <strong>{{ formatCurrency(req.budget * 0.05) }}</strong>
-                  </div>
-                </div>
-
-                <p v-if="req.description" class="lead-desc">"{{ req.description }}"</p>
-
-                <!-- Botões de Ação do Prestador -->
-                <div class="lead-actions-row">
-                  <ion-button
-                    expand="block"
-                    fill="outline"
-                    class="btn-counter"
-                    @click="openCounterModal(req)"
-                  >
-                    Fazer Contraproposta
-                  </ion-button>
-
-                  <ion-button
-                    expand="block"
-                    class="btn-accept-direct"
-                    @click="handleDirectAccept(req)"
-                  >
-                    Aceitar e Abrir Chat
-                  </ion-button>
-                </div>
-              </ion-card-content>
-            </ion-card>
-          </div>
-        </section>
-
-        <!-- ==================== ABA 2: IMPULSOS (GAMIFICADO / ESTRATÉGIA) ==================== -->
-        <section v-if="currentTab === 'boosts'" class="tab-section">
-          <div class="section-title-row">
-            <div>
-              <h2 class="section-title">Impulsionar Perfil</h2>
-              <p class="section-subtitle">Multiplique suas solicitações ficando no topo das buscas</p>
-            </div>
+              {{ catFilter }}
+            </button>
           </div>
 
-          <div class="boost-cards-grid">
+          <!-- Se não houver pedidos -->
+          <div v-if="filteredJobLeads.length === 0" class="empty-leads-box">
+            <ion-icon :icon="sparklesOutline" class="empty-icon"></ion-icon>
+            <h3 class="empty-title">Nenhum chamado nesta categoria</h3>
+            <p class="empty-desc">Recarregue os chamados de demonstração ou altere o filtro acima.</p>
+            <button class="reload-jobs-btn" @click="resetJobs">
+              <ion-icon :icon="refreshOutline"></ion-icon>
+              <span>Recarregar Chamados</span>
+            </button>
+          </div>
+
+          <!-- ListaMinimalista de Cards de Trabalhos -->
+          <div v-else class="jobs-stack">
             <div
-              v-for="plan in appStore.boostPlans"
-              :key="plan.id"
-              class="boost-card"
-              :class="{ 'featured-plan': plan.isPopular }"
+              v-for="job in filteredJobLeads"
+              :key="job.id"
+              class="job-card-item"
             >
-              <div v-if="plan.isPopular" class="popular-ribbon">Recomendado</div>
-
-              <div class="boost-header">
-                <span class="plan-tag">{{ plan.tag }}</span>
-                <h3 class="plan-name">{{ plan.name }}</h3>
-                <div class="plan-price-block">
-                  <span class="currency-sim">R$</span>
-                  <span class="price-val">{{ plan.price.toFixed(2).replace('.', ',') }}</span>
-                  <span class="plan-duration">/ {{ plan.duration }}</span>
+              <div class="job-card-body">
+                <div class="job-top-badges">
+                  <span class="job-type-chip">{{ job.category }} • {{ job.subType }}</span>
+                  <span class="job-scope-chip">{{ job.proCount }}</span>
                 </div>
+
+                <div class="job-header-row">
+                  <h3 class="job-title">{{ job.title }}</h3>
+                  <div class="job-payout-box">
+                    <span class="payout-label">Oferta</span>
+                    <span class="payout-amount">{{ formatCurrency(job.budget) }}</span>
+                  </div>
+                </div>
+
+                <div class="job-meta-grid">
+                  <div class="meta-item">
+                    <ion-icon :icon="calendarOutline" class="meta-icon-neon"></ion-icon>
+                    <span>{{ job.date }} • {{ job.time }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <ion-icon :icon="locationOutline" class="meta-icon-neon"></ion-icon>
+                    <span>{{ job.location }}</span>
+                  </div>
+                </div>
+
+                <p class="job-description-text">"{{ job.description }}"</p>
               </div>
 
-              <div class="plan-perks">
-                <div class="perk-item">
-                  <ion-icon :icon="flashOutline" class="perk-icon"></ion-icon>
-                  <span>Alcance estimado: <strong>{{ plan.multiplier }} maior</strong></span>
-                </div>
-                <div class="perk-item">
-                  <ion-icon :icon="checkmarkCircleOutline" class="perk-icon"></ion-icon>
-                  <span>{{ plan.desc }}</span>
-                </div>
-                <div class="perk-item">
-                  <ion-icon :icon="trophyOutline" class="perk-icon"></ion-icon>
-                  <span>Bônus de <strong>+150 XP</strong> no seu nível de Prestador</span>
-                </div>
+              <!-- Ações do Card -->
+              <div class="job-card-actions">
+                <button class="job-skip-btn" @click="skipJob(job.id)">
+                  <ion-icon :icon="closeOutline"></ion-icon>
+                  <span>Recusar</span>
+                </button>
+                <button class="job-accept-btn" @click="acceptJob(job)">
+                  <ion-icon :icon="checkmarkOutline"></ion-icon>
+                  <span>ACEITAR • {{ formatCurrency(job.budget) }}</span>
+                </button>
               </div>
-
-              <ion-button
-                expand="block"
-                class="btn-buy-boost"
-                :class="{ 'btn-boost-highlight': plan.isPopular }"
-                @click="openCheckoutModal(plan)"
-              >
-                Contratar Impulso
-              </ion-button>
             </div>
           </div>
         </section>
 
-        <!-- ==================== ABA 3: CARTEIRA & GANHOS ==================== -->
-        <section v-if="currentTab === 'wallet'" class="tab-section">
-          <!-- Card de Saldo com Recarga Rápida -->
-          <div class="wallet-main-card">
-            <div class="wallet-top-header">
-              <span class="wallet-kicker">Saldo Disponível na Carteira</span>
-              <span class="wallet-currency-val">{{ formatCurrency(appStore.walletBalance) }}</span>
-              <span class="wallet-subtext">Utilizado para cobrir a taxa de conexão de 5% sobre os contatos</span>
+        <!-- ================= ABA 2: CARTEIRA & SAQUE PIX ================= -->
+        <section v-if="currentTab === 'wallet'" class="tab-pane">
+          <div class="wallet-balance-card">
+            <div class="balance-meta">
+              <span class="balance-label">Saldo Disponível para Saque</span>
+              <h2 class="balance-giant-number">{{ formatCurrency(store.walletBalance) }}</h2>
+              <span class="balance-sub">Repasse de 95% líquido direto via PIX após conclusão</span>
             </div>
 
-            <div class="wallet-cta-row">
-              <ion-button
-                expand="block"
-                class="btn-recharge-balance"
-                @click="isRechargeModalOpen = true"
-              >
-                <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                Adicionar Saldo
-              </ion-button>
+            <div class="wallet-actions-row">
+              <button class="wallet-primary-btn" @click="openWithdrawModal">
+                <ion-icon :icon="arrowUpCircleOutline"></ion-icon>
+                <span>Sacar via PIX</span>
+              </button>
+              <button class="wallet-secondary-btn" @click="isRechargeModalOpen = true">
+                <ion-icon :icon="addCircleOutline"></ion-icon>
+                <span>Adicionar Saldo</span>
+              </button>
             </div>
           </div>
 
-          <!-- Extrato e Histórico de Ganhos / Taxas -->
-          <div class="history-block">
-            <h3 class="history-title">Histórico de Transações & Ganhos</h3>
-
+          <!-- Histórico de Transações -->
+          <div class="transactions-section">
+            <h3 class="pane-subheading">Extrato da Carteira</h3>
             <div class="transactions-list">
               <div
-                v-for="tx in appStore.walletTransactions"
+                v-for="tx in store.transactions"
                 :key="tx.id"
-                class="tx-item"
+                class="tx-card-row"
               >
-                <div class="tx-left">
+                <div class="tx-left-block">
                   <div
-                    class="tx-icon-circle"
+                    class="tx-icon-round"
                     :class="{
-                      'icon-earning': tx.type === 'EARNING',
-                      'icon-debit': tx.type === 'DEBIT',
-                      'icon-recharge': tx.type === 'RECHARGE'
+                      'tx-earning': tx.type === 'EARNING',
+                      'tx-debit': tx.type === 'DEBIT',
+                      'tx-recharge': tx.type === 'RECHARGE'
                     }"
                   >
                     <ion-icon
-                      :icon="tx.type === 'EARNING' ? cashOutline : (tx.type === 'DEBIT' ? removeCircleOutline : arrowUpCircleOutline)"
+                      :icon="tx.type === 'EARNING' ? cashOutline : (tx.type === 'DEBIT' ? removeCircleOutline : addCircleOutline)"
                     ></ion-icon>
                   </div>
-
-                  <div class="tx-details">
-                    <span class="tx-title">{{ tx.title }}</span>
-                    <span class="tx-date">{{ tx.date }} • {{ tx.status }}</span>
+                  <div class="tx-info-block">
+                    <span class="tx-title-text">{{ tx.title }}</span>
+                    <span class="tx-date-meta">{{ tx.date }}</span>
                   </div>
                 </div>
 
                 <span
-                  class="tx-amount"
-                  :class="tx.amount > 0 ? 'amount-positive' : 'amount-negative'"
+                  class="tx-amount-value"
+                  :class="tx.amount > 0 ? 'amount-green' : 'amount-red'"
                 >
                   {{ tx.amount > 0 ? '+' : '' }}{{ formatCurrency(tx.amount) }}
                 </span>
@@ -267,231 +266,215 @@
           </div>
         </section>
 
-        <!-- ==================== ABA 4: PERFIL GAMIFICADO ==================== -->
-        <section v-if="currentTab === 'profile'" class="tab-section">
-          <!-- Card Gamificado de Nível / XP -->
-          <div class="gamification-card">
-            <div class="gamification-header">
-              <div class="profile-avatar-wrap">
-                <img :src="profileForm.avatar" :alt="profileForm.name" class="profile-big-avatar" />
-                <span class="level-badge-float">Nv. {{ profileForm.level }}</span>
+        <!-- ================= ABA 3: IMPULSOS ================= -->
+        <section v-if="currentTab === 'boosts'" class="tab-pane">
+          <div class="section-top-bar">
+            <div>
+              <h2 class="pane-title">Impulsione seu Perfil</h2>
+              <p class="pane-subtitle">Apareça nos Destaques da Semana para mais clientes</p>
+            </div>
+          </div>
+
+          <div class="boost-plans-stack">
+            <div
+              v-for="plan in boostPlans"
+              :key="plan.id"
+              class="boost-plan-card"
+              :class="{ 'featured-boost': plan.isPopular }"
+            >
+              <div v-if="plan.isPopular" class="popular-badge">Mais Escolhido</div>
+              <div class="boost-plan-header">
+                <span class="plan-tag-text">{{ plan.tag }}</span>
+                <h3 class="plan-title-text">{{ plan.name }}</h3>
+                <div class="plan-price-wrap">
+                  <span class="price-big">{{ formatCurrency(plan.price) }}</span>
+                  <span class="price-duration">/ {{ plan.duration }}</span>
+                </div>
               </div>
 
-              <div class="gamification-meta">
-                <span class="level-name-tag">{{ profileForm.levelName }}</span>
-                <h3 class="prestador-name">{{ profileForm.name }}</h3>
-                <div class="rating-row">
-                  <ion-icon :icon="star" class="star-icon"></ion-icon>
-                  <span>{{ profileForm.rating }} / 5.0</span>
-                  <span class="jobs-done">({{ profileForm.completedJobs }} serviços concluídos)</span>
+              <div class="plan-features-list">
+                <div class="feature-line">
+                  <ion-icon :icon="flashOutline" class="feature-icon"></ion-icon>
+                  <span>Alcance <strong>{{ plan.multiplier }} maior</strong></span>
+                </div>
+                <div class="feature-line">
+                  <ion-icon :icon="checkmarkCircleOutline" class="feature-icon"></ion-icon>
+                  <span>{{ plan.desc }}</span>
+                </div>
+              </div>
+
+              <button
+                class="activate-boost-btn"
+                :class="{ 'btn-highlight': plan.isPopular }"
+                @click="buyBoost(plan)"
+              >
+                Ativar Impulso
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= ABA 4: PERFIL DO PRESTADOR ================= -->
+        <section v-if="currentTab === 'profile'" class="tab-pane">
+          <div class="profile-main-card">
+            <div class="profile-top-avatar-row">
+              <div class="avatar-ring-box">
+                <img :src="store.workerProfile.avatar" :alt="store.workerProfile.name" class="worker-avatar-img" />
+                <span class="level-indicator-tag">Nv. {{ store.workerProfile.level }}</span>
+              </div>
+
+              <div class="worker-meta-details">
+                <span class="worker-badge-role">{{ store.workerProfile.levelName }}</span>
+                <h3 class="worker-name-big">{{ store.workerProfile.name }}</h3>
+                <div class="worker-rating-line">
+                  <ion-icon :icon="star" class="star-gold"></ion-icon>
+                  <span>{{ store.workerProfile.rating }} / 5.0</span>
+                  <span class="jobs-counter-text">({{ store.workerProfile.completedJobs }} serviços)</span>
                 </div>
               </div>
             </div>
 
-            <!-- Barra de Progresso de XP -->
-            <div class="xp-progress-block">
-              <div class="xp-labels">
-                <span>Progresso para o Nível {{ profileForm.level + 1 }}</span>
-                <strong>{{ profileForm.xp }} / {{ profileForm.nextLevelXp }} XP</strong>
+            <!-- Especialidade Ativa do Prestador -->
+            <div class="specialty-selector-box">
+              <label class="spec-label">Sua categoria principal de atuação:</label>
+              <div class="filter-pills-scroll">
+                <button
+                  v-for="cat in store.categoriesList"
+                  :key="cat.id"
+                  class="cat-filter-pill"
+                  :class="{ active: store.workerProfile.category === cat.name }"
+                  @click="updateWorkerCategory(cat.name)"
+                >
+                  {{ cat.label }}
+                </button>
               </div>
-              <div class="xp-bar-bg">
-                <div class="xp-bar-fill" :style="{ width: `${(profileForm.xp / profileForm.nextLevelXp) * 100}%` }"></div>
+            </div>
+
+            <!-- Progresso de Nível XP -->
+            <div class="xp-container">
+              <div class="xp-labels-row">
+                <span>Progresso para Nível {{ store.workerProfile.level + 1 }}</span>
+                <strong>{{ store.workerProfile.xp }} / {{ store.workerProfile.nextLevelXp }} XP</strong>
+              </div>
+              <div class="xp-bar-track">
+                <div class="xp-bar-fill" :style="{ width: `${Math.min(100, (store.workerProfile.xp / store.workerProfile.nextLevelXp) * 100)}%` }"></div>
               </div>
             </div>
 
-            <!-- Conquistas / Badges -->
-            <div class="badges-row">
-              <div
-                v-for="badge in profileForm.badges"
-                :key="badge.id"
-                class="badge-pill"
-                :title="badge.desc"
-              >
-                <ion-icon :icon="getBadgeIcon(badge.icon)"></ion-icon>
-                <span>{{ badge.name }}</span>
+            <!-- Conquistas e Selos -->
+            <div class="badges-chips-wrap">
+              <div class="badge-pill-item">
+                <ion-icon :icon="flashOutline" class="neon-icon"></ion-icon>
+                <span>Resposta Rápida</span>
+              </div>
+              <div class="badge-pill-item">
+                <ion-icon :icon="star" class="neon-icon"></ion-icon>
+                <span>Top Avaliado</span>
+              </div>
+              <div class="badge-pill-item">
+                <ion-icon :icon="shieldCheckmarkOutline" class="neon-icon"></ion-icon>
+                <span>Identidade Verificada</span>
               </div>
             </div>
-          </div>
 
-          <!-- Formulário para Atualizar Dados do Prestador -->
-          <div class="edit-profile-card">
-            <h3 class="edit-profile-title">Editar Dados Profissionais</h3>
-
-            <div class="form-inputs">
-              <ion-item class="input-item">
-                <ion-label position="stacked">Nome Completo</ion-label>
-                <ion-input v-model="profileForm.name"></ion-input>
-              </ion-item>
-
-              <ion-item class="input-item">
-                <ion-label position="stacked">Título Profissional</ion-label>
-                <ion-input v-model="profileForm.title" placeholder="Ex: Eletricista Residencial"></ion-input>
-              </ion-item>
-
-              <ion-item class="input-item">
-                <ion-label position="stacked">Telefone / WhatsApp</ion-label>
-                <ion-input v-model="profileForm.phone"></ion-input>
-              </ion-item>
-
-              <ion-item class="input-item">
-                <ion-label position="stacked">Categoria Principal</ion-label>
-                <ion-select v-model="profileForm.category">
-                  <ion-select-option value="Eletricista">Eletricista</ion-select-option>
-                  <ion-select-option value="Garçom">Garçom</ion-select-option>
-                  <ion-select-option value="Diarista">Diarista</ion-select-option>
-                  <ion-select-option value="Encanador">Encanador</ion-select-option>
-                  <ion-select-option value="Pintor">Pintor</ion-select-option>
-                </ion-select>
-              </ion-item>
-
-              <ion-item class="input-item">
-                <ion-label position="stacked">Biografia / Apresentação</ion-label>
-                <ion-textarea v-model="profileForm.bio" :auto-grow="true"></ion-textarea>
-              </ion-item>
-
-              <ion-button expand="block" class="btn-save-profile" @click="handleSaveProfile">
-                Salvar Alterações
-              </ion-button>
+            <!-- Botão de Resetar Apresentação (Restaurar todos os estados iniciais) -->
+            <div class="reset-presentation-box">
+              <button class="reset-presentation-btn" @click="handleResetDemo">
+                <ion-icon :icon="refreshOutline"></ion-icon>
+                <span>Resetar Apresentação (Restaurar Estados Iniciais)</span>
+              </button>
             </div>
           </div>
         </section>
 
       </div>
 
-      <!-- MODAL 1: CHECKOUT DO IMPULSO (PIX / DÉBITO MOCKADO) -->
+      <!-- MODAL 1: SAQUE VIA PIX (FECHAMENTO DE FLUXO FINANCEIRO) -->
       <ion-modal
-        :is-open="isCheckoutModalOpen"
-        :breakpoints="[0, 0.6, 0.85]"
-        :initial-breakpoint="0.6"
-        @didDismiss="isCheckoutModalOpen = false"
-        class="custom-sheet"
+        :is-open="isWithdrawModalOpen"
+        :breakpoints="[0, 0.65, 0.85]"
+        :initial-breakpoint="0.65"
+        @didDismiss="isWithdrawModalOpen = false"
+        class="custom-modal-sheet"
       >
-        <ion-content class="modal-sheet-content ion-padding">
-          <div class="checkout-modal-inner">
-            <h2 class="modal-sheet-title">Ativar {{ selectedBoostPlan?.name }}</h2>
-            <p class="modal-sheet-sub">Selecione o método de pagamento para liberar o destaque:</p>
+        <ion-content class="modal-sheet-inner ion-padding">
+          <div class="modal-header-row">
+            <div>
+              <h2 class="sheet-title">Sacar via PIX</h2>
+              <p class="sheet-subtitle">Disponível: {{ formatCurrency(store.walletBalance) }}</p>
+            </div>
+            <button class="btn-close-modal" @click="isWithdrawModalOpen = false">✕</button>
+          </div>
 
-            <div class="plan-price-confirm">
-              <span>Valor a pagar:</span>
-              <strong class="neon-price">R$ {{ selectedBoostPlan?.price.toFixed(2).replace('.', ',') }}</strong>
+          <div class="withdraw-form-stack">
+            <label class="field-label">Chave PIX de destino</label>
+            <input
+              type="text"
+              v-model="pixKeyInput"
+              placeholder="CPF, Celular ou E-mail"
+              class="modal-dark-input"
+            />
+
+            <label class="field-label">Valor do saque (R$)</label>
+            <div class="quick-recharge-row">
+              <button
+                v-for="amt in [50, 100, store.walletBalance]"
+                :key="amt"
+                class="quick-amt-btn"
+                :class="{ active: withdrawAmount === amt }"
+                @click="withdrawAmount = amt"
+              >
+                {{ amt === store.walletBalance ? `Tudo (${formatCurrency(amt)})` : `R$ ${amt}` }}
+              </button>
             </div>
 
-            <div class="payment-methods-grid">
-              <button
-                class="method-btn"
-                :class="{ active: paymentMethod === 'PIX' }"
-                @click="paymentMethod = 'PIX'"
-              >
-                <ion-icon :icon="qrCodeOutline"></ion-icon>
-                <span>PIX Instantâneo</span>
-              </button>
-
-              <button
-                class="method-btn"
-                :class="{ active: paymentMethod === 'DEBITO' }"
-                @click="paymentMethod = 'DEBITO'"
-              >
-                <ion-icon :icon="cardOutline"></ion-icon>
-                <span>Cartão de Débito</span>
-              </button>
-            </div>
-
-            <ion-button
-              expand="block"
-              class="btn-confirm-payment"
-              @click="confirmBoostPayment"
-            >
-              Confirmar Pagamento Mockado
-            </ion-button>
+            <button class="confirm-recharge-btn" @click="confirmWithdrawPix">
+              Transferir {{ formatCurrency(withdrawAmount) }} Agora
+            </button>
           </div>
         </ion-content>
       </ion-modal>
 
-      <!-- MODAL 2: RECARGA DE SALDO NA CARTEIRA -->
+      <!-- MODAL 2: RECARGA -->
       <ion-modal
         :is-open="isRechargeModalOpen"
         :breakpoints="[0, 0.55, 0.8]"
         :initial-breakpoint="0.55"
         @didDismiss="isRechargeModalOpen = false"
-        class="custom-sheet"
+        class="custom-modal-sheet"
       >
-        <ion-content class="modal-sheet-content ion-padding">
-          <div class="checkout-modal-inner">
-            <h2 class="modal-sheet-title">Recarregar Carteira</h2>
-            <p class="modal-sheet-sub">Adicione créditos para desbloquear contatos de novos clientes:</p>
-
-            <div class="quick-amounts-row">
-              <button
-                v-for="amt in [20, 50, 100]"
-                :key="amt"
-                class="amt-btn"
-                :class="{ active: rechargeAmount === amt }"
-                @click="rechargeAmount = amt"
-              >
-                + R$ {{ amt }}
-              </button>
+        <ion-content class="modal-sheet-inner ion-padding">
+          <div class="modal-header-row">
+            <div>
+              <h2 class="sheet-title">Adicionar Saldo</h2>
+              <p class="sheet-subtitle">Recarga instantânea via PIX</p>
             </div>
-
-            <ion-item class="input-item" style="margin-top: 8px;">
-              <ion-label position="stacked">Outro Valor (R$)</ion-label>
-              <ion-input type="number" v-model.number="rechargeAmount" placeholder="Ex: 35.00"></ion-input>
-            </ion-item>
-
-            <ion-button
-              expand="block"
-              class="btn-confirm-payment"
-              :disabled="!rechargeAmount || rechargeAmount <= 0"
-              @click="confirmRecharge"
-            >
-              Confirmar Recarga via PIX
-            </ion-button>
+            <button class="btn-close-modal" @click="isRechargeModalOpen = false">✕</button>
           </div>
-        </ion-content>
-      </ion-modal>
 
-      <!-- MODAL 3: CONTRAPROPOSTA -->
-      <ion-modal
-        :is-open="isCounterModalOpen"
-        :breakpoints="[0, 0.5, 0.75]"
-        :initial-breakpoint="0.5"
-        @didDismiss="isCounterModalOpen = false"
-        class="custom-sheet"
-      >
-        <ion-content class="modal-sheet-content ion-padding">
-          <div class="checkout-modal-inner">
-            <h2 class="modal-sheet-title">Enviar Contraproposta</h2>
-            <p class="modal-sheet-sub">
-              Orçamento do cliente: <strong>{{ formatCurrency(selectedRequest?.budget) }}</strong>.
-              Informe o valor que você deseja cobrar:
-            </p>
-
-            <ion-item class="input-item">
-              <ion-label position="stacked">Seu Valor Proposto (R$)</ion-label>
-              <ion-input type="number" v-model.number="counterBudget" placeholder="Ex: 140.00"></ion-input>
-            </ion-item>
-
-            <div v-if="counterBudget" class="counter-tax-preview">
-              Taxa de 5% sobre sua contraproposta: <strong>{{ formatCurrency(counterBudget * 0.05) }}</strong>
-            </div>
-
-            <ion-button
-              expand="block"
-              class="btn-confirm-payment"
-              :disabled="!counterBudget || counterBudget <= 0"
-              @click="submitCounterOffer"
+          <div class="quick-recharge-row">
+            <button
+              v-for="amt in [30, 50, 100]"
+              :key="amt"
+              class="quick-amt-btn"
+              :class="{ active: rechargeValue === amt }"
+              @click="rechargeValue = amt"
             >
-              Enviar e Abrir Negociação
-            </ion-button>
+              + R$ {{ amt }}
+            </button>
           </div>
+
+          <button class="confirm-recharge-btn" @click="confirmRecharge">
+            Confirmar Recarga de R$ {{ rechargeValue }}
+          </button>
         </ion-content>
       </ion-modal>
 
       <!-- Toast Feedback -->
       <ion-toast
         :is-open="showToast"
-        :message="toastMessage"
-        :color="toastColor"
-        :duration="3000"
+        :message="toastMsg"
+        :duration="2400"
         position="bottom"
         @didDismiss="showToast = false"
       ></ion-toast>
@@ -500,711 +483,779 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   IonPage,
   IonHeader,
   IonToolbar,
-  IonButtons,
-  IonBackButton,
-  IonButton,
-  IonIcon,
   IonContent,
-  IonCard,
-  IonCardContent,
+  IonIcon,
   IonModal,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonSelect,
-  IonSelectOption,
-  IonTextarea,
   IonToast
 } from '@ionic/vue';
 import {
-  swapHorizontalOutline,
   flashOutline,
-  rocketOutline,
   walletOutline,
+  rocketOutline,
   personCircleOutline,
-  searchOutline,
-  shieldCheckmarkOutline,
-  locationOutline,
   calendarOutline,
-  checkmarkCircleOutline,
-  trophyOutline,
+  locationOutline,
+  closeOutline,
+  checkmarkOutline,
+  sparklesOutline,
+  refreshOutline,
   addCircleOutline,
+  arrowUpCircleOutline,
   cashOutline,
   removeCircleOutline,
-  arrowUpCircleOutline,
-  qrCodeOutline,
-  cardOutline,
-  star
+  checkmarkCircleOutline,
+  chatbubbleOutline,
+  star,
+  shieldCheckmarkOutline
 } from 'ionicons/icons';
 import { useAppStore } from '@/stores/useAppStore';
 
 const router = useRouter();
-const route = useRoute();
-const appStore = useAppStore();
+const store = useAppStore();
 
-const currentTab = ref('leads'); // 'leads' | 'boosts' | 'wallet' | 'profile'
-
-onMounted(() => {
-  if (route.query.tab) {
-    currentTab.value = String(route.query.tab);
-  }
-});
-
-watch(
-  () => route.query.tab,
-  (newTab) => {
-    if (newTab) {
-      currentTab.value = String(newTab);
-    }
-  }
-);
-
-function setTab(tab) {
-  currentTab.value = tab;
-  router.replace({ path: '/provider', query: { tab } });
-}
-
-// Modais
-const isCheckoutModalOpen = ref(false);
-const isRechargeModalOpen = ref(false);
-const isCounterModalOpen = ref(false);
-
-const selectedBoostPlan = ref(null);
-const selectedRequest = ref(null);
-const paymentMethod = ref('PIX');
-const rechargeAmount = ref(50);
-const counterBudget = ref(null);
+const currentTab = ref('leads');
+const selectedJobFilter = ref('Todos');
 
 const showToast = ref(false);
-const toastMessage = ref('');
-const toastColor = ref('success');
+const toastMsg = ref('');
 
-// Cópia reativa para o formulário de perfil
-const profileForm = reactive({ ...appStore.providerProfile });
+const isRechargeModalOpen = ref(false);
+const rechargeValue = ref(50);
 
-// Pedidos abertos (com status 'PENDING' ou 'OPEN')
-const openRequests = computed(() => {
-  return appStore.requests.filter((r) => r.status === 'PENDING' || r.status === 'OPEN');
+const isWithdrawModalOpen = ref(false);
+const pixKeyInput = ref(store.workerProfile.pixKey || 'carlos.oliveira@pix.com.br');
+const withdrawAmount = ref(100);
+
+const filteredJobLeads = computed(() => {
+  if (selectedJobFilter.value === 'Todos') return store.jobLeads;
+  return store.jobLeads.filter(j => j.category === selectedJobFilter.value);
 });
 
-// Formatação BRL
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL'
-});
+const boostPlans = [
+  {
+    id: 'b-1',
+    name: 'Impulso Básico',
+    tag: 'Econômico',
+    price: 19.90,
+    duration: '3 dias',
+    multiplier: '1.5x',
+    desc: 'Destaque na listagem da sua categoria para chamados urgentes.',
+    isPopular: false
+  },
+  {
+    id: 'b-2',
+    name: 'Impulso Turbo Pro',
+    tag: 'Recomendado',
+    price: 39.90,
+    duration: '7 dias',
+    multiplier: '3.8x',
+    desc: 'Prioridade máxima no topo das buscas com selo Verificado Destaque.',
+    isPopular: true
+  },
+  {
+    id: 'b-3',
+    name: 'Impulso VIP Mensal',
+    tag: 'Performance',
+    price: 89.90,
+    duration: '30 dias',
+    multiplier: '5.5x',
+    desc: 'Exposição contínua em Destaques da Semana durante todo o mês.',
+    isPopular: false
+  }
+];
 
 function formatCurrency(val) {
-  return currencyFormatter.format(Number(val) || 0);
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0
+  }).format(Number(val) || 0);
 }
 
 function goToHome() {
-  router.push('/');
+  router.push('/home');
 }
 
-function handleToggleRole() {
-  appStore.toggleRole();
+function goToClientDashboard() {
   router.push('/client/dashboard');
 }
 
-function getBadgeIcon(iconName) {
-  if (iconName === 'star') return star;
-  if (iconName === 'flash') return flashOutline;
-  return shieldCheckmarkOutline;
+function skipJob(jobId) {
+  store.skipJobLead(jobId);
+  toastMsg.value = 'Chamado ocultado da sua fila.';
+  showToast.value = true;
 }
 
-// Aceite direto
-function handleDirectAccept(req) {
-  const fee = Number(req.budget) * 0.05;
-  if (appStore.walletBalance < fee) {
-    toastMessage.value = `Saldo insuficiente (R$ ${appStore.walletBalance.toFixed(2)}) para cobrir a taxa de R$ ${fee.toFixed(2)}. Recarregue sua carteira!`;
-    toastColor.value = 'danger';
+function acceptJob(job) {
+  store.acceptJobLead(job);
+  toastMsg.value = `Chamado aceito! Combine os detalhes em "Em Andamento".`;
+  showToast.value = true;
+}
+
+function openChatWithClient(job) {
+  store.openChatWithPro(
+    {
+      id: job.id,
+      nome: job.clientName || 'Cliente +SERVE',
+      name: job.clientName || 'Cliente +SERVE',
+      categoria: `Cliente • ${job.category}`,
+      avatar: job.clientAvatar || 'https://i.pravatar.cc/150?img=32',
+      nota: '5,0'
+    },
+    {
+      id: job.orderId || job.id,
+      title: job.title,
+      price: job.budget
+    }
+  );
+}
+
+function finishWorkerJob(job) {
+  store.completeWorkerJob(job.id);
+  const net = Math.round(job.budget * 0.95);
+  toastMsg.value = `Serviço concluído! +R$ ${net} liberados na sua Carteira!`;
+  showToast.value = true;
+}
+
+function resetJobs() {
+  store.resetJobLeads();
+  selectedJobFilter.value = 'Todos';
+  toastMsg.value = 'Fila de chamados atualizada!';
+  showToast.value = true;
+}
+
+function openWithdrawModal() {
+  withdrawAmount.value = store.walletBalance > 0 ? store.walletBalance : 50;
+  isWithdrawModalOpen.value = true;
+}
+
+function confirmWithdrawPix() {
+  if (store.walletBalance <= 0) {
+    toastMsg.value = 'Saldo insuficiente para saque.';
     showToast.value = true;
-    currentTab.value = 'wallet';
     return;
   }
-
-  appStore.walletBalance -= fee;
-  appStore.walletTransactions.unshift({
-    id: `fee-${Date.now()}`,
-    type: 'DEBIT',
-    title: `Taxa de desbloqueio: ${req.category}`,
-    amount: -fee,
-    date: 'Agora mesmo',
-    status: 'Debitado'
-  });
-
-  req.status = 'IN_PROGRESS';
-  appStore.activeRequest = req;
-  appStore.chatModalOpen = true;
-
-  toastMessage.value = 'Contato desbloqueado e chat liberado!';
-  toastColor.value = 'success';
-  showToast.value = true;
-}
-
-// Modal Contraproposta
-function openCounterModal(req) {
-  selectedRequest.value = req;
-  counterBudget.value = Math.round(Number(req.budget) * 1.15);
-  isCounterModalOpen.value = true;
-}
-
-function submitCounterOffer() {
-  if (!counterBudget.value || !selectedRequest.value) return;
-
-  const fee = Number(counterBudget.value) * 0.05;
-  if (appStore.walletBalance < fee) {
-    toastMessage.value = `Saldo insuficiente para a contraproposta. Recarregue sua carteira!`;
-    toastColor.value = 'danger';
+  const ok = store.withdrawPix(withdrawAmount.value, pixKeyInput.value);
+  if (ok) {
+    isWithdrawModalOpen.value = false;
+    toastMsg.value = `PIX de ${formatCurrency(withdrawAmount.value)} enviado para ${pixKeyInput.value}!`;
     showToast.value = true;
-    isCounterModalOpen.value = false;
-    currentTab.value = 'wallet';
-    return;
   }
-
-  appStore.walletBalance -= fee;
-  appStore.walletTransactions.unshift({
-    id: `fee-${Date.now()}`,
-    type: 'DEBIT',
-    title: `Taxa de contraproposta (${selectedRequest.value.category})`,
-    amount: -fee,
-    date: 'Agora mesmo',
-    status: 'Debitado'
-  });
-
-  selectedRequest.value.budget = Number(counterBudget.value);
-  selectedRequest.value.status = 'IN_PROGRESS';
-  appStore.activeRequest = selectedRequest.value;
-  isCounterModalOpen.value = false;
-  appStore.chatModalOpen = true;
-
-  toastMessage.value = 'Contraproposta enviada e chat liberado!';
-  toastColor.value = 'success';
-  showToast.value = true;
 }
 
-// Modal Checkout Impulsos
-function openCheckoutModal(plan) {
-  selectedBoostPlan.value = plan;
-  isCheckoutModalOpen.value = true;
-}
-
-function confirmBoostPayment() {
-  if (!selectedBoostPlan.value) return;
-
-  appStore.buyBoost(selectedBoostPlan.value, paymentMethod.value);
-  profileForm.xp = appStore.providerProfile.xp;
-
-  isCheckoutModalOpen.value = false;
-  toastMessage.value = `Impulso ${selectedBoostPlan.value.name} ativado via ${paymentMethod.value}! (+150 XP)`;
-  toastColor.value = 'success';
-  showToast.value = true;
-}
-
-// Recarga
 function confirmRecharge() {
-  if (!rechargeAmount.value || rechargeAmount.value <= 0) return;
-
-  appStore.addWalletFunds(rechargeAmount.value, 'PIX');
+  store.rechargeWallet(rechargeValue.value);
   isRechargeModalOpen.value = false;
-  toastMessage.value = `Recarga de ${formatCurrency(rechargeAmount.value)} efetuada com sucesso!`;
-  toastColor.value = 'success';
+  toastMsg.value = `Recarga de R$ ${rechargeValue.value} adicionada!`;
   showToast.value = true;
 }
 
-// Salvar Perfil
-function handleSaveProfile() {
-  appStore.updateProviderProfile({ ...profileForm });
-  toastMessage.value = 'Dados do perfil atualizados com sucesso!';
-  toastColor.value = 'success';
+function buyBoost(plan) {
+  toastMsg.value = `${plan.name} ativado com sucesso!`;
+  showToast.value = true;
+}
+
+function updateWorkerCategory(catName) {
+  store.workerProfile.category = catName;
+  store.workerProfile.levelName = `Especialista Ouro • ${catName}`;
+  toastMsg.value = `Categoria principal atualizada para ${catName}!`;
+  showToast.value = true;
+}
+
+function handleResetDemo() {
+  store.resetPresentation();
+  selectedJobFilter.value = 'Todos';
+  toastMsg.value = 'Apresentação restaurada! Todos os estados voltaram ao padrão inicial.';
   showToast.value = true;
 }
 </script>
 
 <style scoped>
+.provider-page-root {
+  --ion-background-color: #030407;
+  --ion-text-color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ================= HEADER ================= */
 .provider-header {
-  background: transparent;
+  background: #030407;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.header-toolbar {
-  --background: rgba(3, 4, 7, 0.95);
-  --border-style: none;
-  backdrop-filter: blur(10px);
-  padding: 0 4px;
-  border-bottom: 1px solid #161b28;
+.provider-toolbar {
+  --background: #030407;
+  --min-height: 60px;
 }
 
-.back-btn {
-  --color: #ffffff;
-  margin-inline-start: -4px;
+.header-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 16px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .brand-block {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
 }
 
-.neon-brand {
-  font-size: 1.4rem;
+.neon-plus {
+  color: #D4FF24;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 900;
+  font-style: italic;
+  color: #ffffff;
+}
+
+.worker-mode-tag {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-left: 4px;
+}
+
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wallet-pill-btn {
+  background: #0b0f17;
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  border-radius: 10px;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  cursor: pointer;
+}
+
+.wallet-tiny-label {
+  font-size: 9px;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.wallet-value-text {
+  font-size: 13px;
   font-weight: 800;
   color: #D4FF24;
 }
 
-.slash-separator {
-  color: #68686a;
-  font-size: 0.95rem;
-}
-
-.role-title {
-  color: #5d93f7;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.wallet-badge-minimal {
+.switch-to-client-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 5px;
-  background: #0d121c;
-  border: 1px solid #1c263c;
-  padding: 4px 8px;
-  border-radius: 999px;
   cursor: pointer;
-  margin-right: 2px;
 }
 
-.badge-label {
-  font-size: 0.65rem;
-  color: #8e8e90;
-  text-transform: uppercase;
+.btn-text-hide-sm {
+  display: none;
 }
 
-.badge-value {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #D4FF24;
+@media (min-width: 540px) {
+  .btn-text-hide-sm {
+    display: inline;
+  }
 }
 
-.icon-nav-btn {
-  --color: #ffffff;
-  --padding-start: 4px;
-  --padding-end: 4px;
+/* Subnav */
+.subnav-container {
+  background: #06090f;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Subnav de Abas do Prestador */
-.provider-subnav {
-  display: flex;
-  background: #090c13;
-  border-bottom: 1px solid #161b28;
-  padding: 4px 6px;
-  gap: 4px;
-  overflow-x: auto;
+.subnav-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
 }
 
-.subnav-btn {
-  flex: 1;
+.subnav-item {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #9ca3af;
+  padding: 11px 6px;
+  font-size: 12px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  background: transparent;
-  border: none;
-  color: #8e8e90;
-  padding: 8px 6px;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
 }
 
-.subnav-btn ion-icon {
-  font-size: 0.95rem;
+.subnav-item.active {
+  color: #D4FF24;
+  border-bottom-color: #D4FF24;
+  font-weight: 700;
 }
 
-.subnav-btn.active {
-  background: rgba(21, 88, 201, 0.25);
-  color: #5d93f7;
-  border: 1px solid rgba(21, 88, 201, 0.45);
+.subnav-badge {
+  background: #D4FF24;
+  color: #050800;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 99px;
 }
 
+/* ================= CONTEÚDO ================= */
 .provider-content {
   --background: #030407;
-  font-family: 'Inter', sans-serif;
-  --padding-top: 12px;
-  --padding-bottom: 24px;
-  --padding-start: 12px;
-  --padding-end: 12px;
 }
 
-.content-container {
-  max-width: 760px;
+.page-wrapper {
+  max-width: 820px;
   margin: 0 auto;
+  padding: 16px 16px 96px;
 }
 
-.tab-section {
+.section-top-bar {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.section-title-row {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.section-title {
-  color: #ffffff;
-  font-size: 1.25rem;
+.pane-title {
+  font-size: 19px;
   font-weight: 800;
-  margin: 0 0 2px 0;
-}
-
-.section-subtitle {
-  color: #8e8e90;
-  font-size: 0.8rem;
+  color: #ffffff;
   margin: 0;
 }
 
-.leads-counter {
-  background: rgba(212, 255, 36, 0.15);
+.pane-subtitle {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin: 2px 0 0;
+}
+
+.leads-counter-pill {
+  background: rgba(212, 255, 36, 0.12);
+  border: 1px solid rgba(212, 255, 36, 0.3);
   color: #D4FF24;
-  border: 1px solid rgba(212, 255, 36, 0.35);
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 11px;
   font-weight: 700;
-  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 99px;
 }
 
-/* Leads Cards */
-.leads-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ================= TRABALHOS EM ANDAMENTO ================= */
+.accepted-jobs-section {
+  margin-bottom: 24px;
 }
 
-.lead-card {
-  background: #0b0d14;
-  border: 1px solid #1c202b;
-  border-radius: 14px;
-  margin: 0;
-}
-
-.lead-card-body {
-  padding: 14px;
+.accepted-stack {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.lead-top-row {
+.accepted-job-card {
+  background: rgba(212, 255, 36, 0.05);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.accepted-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 6px;
 }
 
-.category-pill {
-  background: rgba(21, 88, 201, 0.2);
-  color: #5d93f7;
-  border: 1px solid rgba(21, 88, 201, 0.4);
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.anonymous-client {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: #25d366;
-}
-
-.lead-middle {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.lead-location, .lead-datetime {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #cdcdce;
-  font-size: 0.82rem;
-}
-
-.lead-location ion-icon, .lead-datetime ion-icon {
-  color: #5d93f7;
-  font-size: 0.95rem;
-}
-
-.lead-budget-block {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #111420;
-  border: 1px solid #1b2133;
-  padding: 8px 12px;
-  border-radius: 10px;
-}
-
-.budget-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.budget-label {
-  font-size: 0.68rem;
-  color: #8e8e90;
-  text-transform: uppercase;
-}
-
-.budget-amount {
-  font-size: 1.15rem;
+.accepted-cat-pill {
+  font-size: 11px;
   font-weight: 800;
+  color: #D4FF24;
+  text-transform: uppercase;
+}
+
+.accepted-status-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.accepted-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.accepted-meta {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0 0 12px;
+}
+
+.accepted-client-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-wrap: wrap;
+}
+
+.client-mini-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-mini-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.client-mini-name {
+  display: block;
+  font-size: 12.5px;
+}
+
+.client-mini-val {
+  font-size: 11px;
+  color: #D4FF24;
+  font-weight: 700;
+}
+
+.accepted-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-chat-client {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.btn-finish-job {
+  background: #D4FF24;
+  border: none;
+  color: #050800;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+/* ================= FILTROS & CARDS DE CHAMADOS ================= */
+.filter-pills-scroll {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+  scrollbar-width: none;
+}
+
+.filter-pills-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-filter-pill {
+  background: #090d15;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+  padding: 7px 13px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cat-filter-pill.active {
+  background: rgba(212, 255, 36, 0.14);
+  border-color: #D4FF24;
+  color: #D4FF24;
+  font-weight: 700;
+}
+
+.jobs-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.job-card-item {
+  background: #070a10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.job-top-badges {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.job-type-chip {
+  font-size: 11px;
+  font-weight: 800;
+  color: #D4FF24;
+  text-transform: uppercase;
+}
+
+.job-scope-chip {
+  font-size: 11px;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.job-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.job-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.job-payout-box {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.payout-label {
+  display: block;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.payout-amount {
+  font-size: 18px;
+  font-weight: 900;
   color: #D4FF24;
 }
 
-.tax-info {
-  font-size: 0.72rem;
-  color: #8e8e90;
-  text-align: right;
+.job-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #d1d5db;
+  margin-bottom: 10px;
 }
 
-.tax-info strong {
-  color: #ffffff;
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.lead-desc {
-  font-size: 0.82rem;
-  color: #a7a7a8;
-  margin: 0;
-  font-style: italic;
+.meta-icon-neon {
+  color: #D4FF24;
+}
+
+.job-description-text {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin: 0 0 14px;
   line-height: 1.4;
 }
 
-.lead-actions-row {
+.job-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+
+.job-skip-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  border-radius: 10px;
+  height: 44px;
+  font-size: 12.5px;
+  font-weight: 700;
   display: flex;
-  gap: 8px;
-  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
 }
 
-@media (max-width: 440px) {
-  .lead-actions-row {
-    flex-direction: column;
-  }
-}
-
-.btn-counter {
-  --border-color: #1558C9;
-  --color: #5d93f7;
-  font-weight: 600;
-  font-size: 0.8rem;
-  height: 38px;
-  flex: 1;
-  margin: 0;
-}
-
-.btn-accept-direct {
-  --background: #D4FF24;
-  --background-activated: #bbe020;
-  --color: #030407;
-  font-weight: 800;
-  font-size: 0.82rem;
-  height: 38px;
-  flex: 1.3;
-  margin: 0;
-}
-
-/* ==================== BOOSTS / IMPULSOS ==================== */
-.boost-cards-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-@media (min-width: 768px) {
-  .boost-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.boost-card {
-  position: relative;
-  background: #0b0d14;
-  border: 1px solid #1c202b;
-  border-radius: 14px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.boost-card.featured-plan {
-  border-color: #D4FF24;
-  background: linear-gradient(180deg, #0f1422 0%, #0b0d14 100%);
-  box-shadow: 0 0 20px rgba(212, 255, 36, 0.15);
-}
-
-.popular-ribbon {
-  position: absolute;
-  top: 10px;
-  right: 12px;
+.job-accept-btn {
   background: #D4FF24;
-  color: #030407;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 999px;
-  text-transform: uppercase;
-}
-
-.plan-tag {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #5d93f7;
-}
-
-.plan-name {
-  color: #ffffff;
-  font-size: 1.1rem;
-  font-weight: 800;
-  margin: 2px 0 6px 0;
-}
-
-.plan-price-block {
+  border: none;
+  color: #050800;
+  border-radius: 10px;
+  height: 44px;
+  font-size: 13px;
+  font-weight: 900;
   display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.currency-sim {
-  color: #D4FF24;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.price-val {
-  color: #D4FF24;
-  font-size: 1.6rem;
-  font-weight: 800;
-}
-
-.plan-duration {
-  color: #8e8e90;
-  font-size: 0.75rem;
-}
-
-.plan-perks {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.perk-item {
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  font-size: 0.8rem;
-  color: #cdcdce;
-  line-height: 1.35;
+  cursor: pointer;
 }
 
-.perk-icon {
-  color: #5d93f7;
-  font-size: 1rem;
-  flex-shrink: 0;
-  margin-top: 1px;
+.empty-leads-box {
+  background: #070a10;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 32px 20px;
+  text-align: center;
 }
 
-.btn-buy-boost {
-  --background: #1558C9;
-  --color: #ffffff;
-  font-weight: 700;
-  font-size: 0.82rem;
-  height: 40px;
-  margin-top: 4px;
+.empty-icon {
+  font-size: 36px;
+  color: #D4FF24;
 }
 
-.btn-boost-highlight {
-  --background: #D4FF24;
-  --color: #030407;
+.empty-title {
+  font-size: 16px;
   font-weight: 800;
+  margin: 8px 0 4px;
 }
 
-/* ==================== CARTEIRA ==================== */
-.wallet-main-card {
-  background: linear-gradient(135deg, #0d121c 0%, #151e33 100%);
-  border: 1px solid #1c263c;
+.empty-desc {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin: 0 0 16px;
+}
+
+.reload-jobs-btn {
+  background: #D4FF24;
+  color: #050800;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* ================= CARTEIRA ================= */
+.wallet-balance-card {
+  background: #070a10;
+  border: 1px solid rgba(212, 255, 36, 0.25);
   border-radius: 16px;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  margin-bottom: 20px;
 }
 
-.wallet-top-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.balance-label {
+  font-size: 12px;
+  color: #9ca3af;
 }
 
-.wallet-kicker {
-  font-size: 0.75rem;
-  color: #8e8e90;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.wallet-currency-val {
-  font-size: 2.2rem;
-  font-weight: 800;
+.balance-giant-number {
+  font-size: 32px;
+  font-weight: 900;
   color: #D4FF24;
-  letter-spacing: -0.5px;
+  margin: 4px 0;
 }
 
-.wallet-subtext {
-  font-size: 0.78rem;
-  color: #cdcdce;
+.balance-sub {
+  font-size: 11.5px;
+  color: #9ca3af;
 }
 
-.btn-recharge-balance {
-  --background: #D4FF24;
-  --color: #030407;
-  font-weight: 800;
+.wallet-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.wallet-primary-btn {
+  background: #D4FF24;
+  color: #050800;
+  border: none;
+  border-radius: 10px;
   height: 44px;
-  margin: 0;
-}
-
-.history-block {
+  font-size: 13px;
+  font-weight: 800;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
 }
 
-.history-title {
+.wallet-secondary-btn {
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-  font-size: 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  height: 44px;
+  font-size: 13px;
   font-weight: 700;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.pane-subheading {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 10px;
 }
 
 .transactions-list {
@@ -1213,397 +1264,403 @@ function handleSaveProfile() {
   gap: 8px;
 }
 
-.tx-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #0b0d14;
-  border: 1px solid #1c202b;
+.tx-card-row {
+  background: #070a10;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.tx-left {
+.tx-left-block {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.tx-icon-circle {
+.tx-icon-round {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
+  font-size: 18px;
 }
 
-.icon-earning {
-  background: rgba(37, 211, 102, 0.15);
-  color: #25d366;
+.tx-earning {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
 }
 
-.icon-debit {
-  background: rgba(255, 73, 97, 0.15);
-  color: #ff4961;
+.tx-debit {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
 }
 
-.icon-recharge {
+.tx-recharge {
   background: rgba(212, 255, 36, 0.15);
   color: #D4FF24;
 }
 
-.tx-details {
+.tx-info-block {
   display: flex;
   flex-direction: column;
 }
 
-.tx-title {
-  color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.tx-date {
-  color: #68686a;
-  font-size: 0.7rem;
-}
-
-.tx-amount {
-  font-size: 0.95rem;
-  font-weight: 800;
-}
-
-.amount-positive {
-  color: #25d366;
-}
-
-.amount-negative {
-  color: #ff4961;
-}
-
-/* ==================== PERFIL GAMIFICADO ==================== */
-.gamification-card {
-  background: #0e121c;
-  border: 1px solid #1c2436;
-  border-radius: 16px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.gamification-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.profile-avatar-wrap {
-  position: relative;
-}
-
-.profile-big-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #D4FF24;
-}
-
-.level-badge-float {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  background: #1558C9;
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 999px;
-  border: 1px solid #0e121c;
-}
-
-.gamification-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.level-name-tag {
-  color: #D4FF24;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.prestador-name {
-  color: #ffffff;
-  font-size: 1.15rem;
-  font-weight: 800;
-  margin: 2px 0 4px 0;
-}
-
-.rating-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8rem;
-  color: #D4FF24;
+.tx-title-text {
+  font-size: 13px;
   font-weight: 700;
 }
 
-.jobs-done {
-  color: #8e8e90;
-  font-size: 0.75rem;
-  font-weight: 400;
-  margin-left: 2px;
+.tx-date-meta {
+  font-size: 11px;
+  color: #9ca3af;
 }
 
-.xp-progress-block {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.tx-amount-value {
+  font-size: 13.5px;
+  font-weight: 800;
 }
 
-.xp-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: #cdcdce;
+.amount-green {
+  color: #4ade80;
 }
 
-.xp-bar-bg {
-  width: 100%;
-  height: 8px;
-  background: #182030;
-  border-radius: 999px;
-  overflow: hidden;
+.amount-red {
+  color: #f87171;
 }
 
-.xp-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #1558C9 0%, #D4FF24 100%);
-  border-radius: 999px;
-}
-
-.badges-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.badge-pill {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  color: #cdcdce;
-}
-
-.badge-pill ion-icon {
-  color: #D4FF24;
-}
-
-/* Edit Profile Card */
-.edit-profile-card {
-  background: #0b0d14;
-  border: 1px solid #1c202b;
-  border-radius: 14px;
-  padding: 18px;
+/* ================= IMPULSOS ================= */
+.boost-plans-stack {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.edit-profile-title {
-  color: #ffffff;
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.form-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.input-item {
-  --background: #141722;
-  --color: #ffffff;
-  --border-color: #242c3d;
-  border-radius: 8px;
-}
-
-.btn-save-profile {
-  --background: #1558C9;
-  --color: #ffffff;
-  font-weight: 700;
-  margin-top: 6px;
-  height: 44px;
-}
-
-/* Empty Box */
-.empty-box {
-  background: #0b0d14;
-  border: 1px solid #1c202b;
+.boost-plan-card {
+  position: relative;
+  background: #070a10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 36px 16px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  padding: 16px;
 }
 
-.empty-icon {
-  font-size: 2rem;
-  color: #5d93f7;
+.boost-plan-card.featured-boost {
+  border-color: #D4FF24;
 }
 
-.empty-box h3 {
-  color: #ffffff;
-  font-size: 1.05rem;
+.popular-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #D4FF24;
+  color: #050800;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.plan-tag-text {
+  font-size: 10.5px;
+  color: #D4FF24;
   font-weight: 700;
-  margin: 0;
+  text-transform: uppercase;
 }
 
-.empty-box p {
-  color: #8e8e90;
-  font-size: 0.8rem;
-  margin: 0;
-  max-width: 320px;
+.plan-title-text {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 2px 0 6px;
 }
 
-/* Modal Bottom Sheets */
-.custom-sheet {
-  --background: #0b0d14;
+.price-big {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
 }
 
-.modal-sheet-content {
-  --background: #0b0d14;
-  --color: #ffffff;
+.price-duration {
+  font-size: 12px;
+  color: #9ca3af;
 }
 
-.checkout-modal-inner {
+.plan-features-list {
+  margin: 12px 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
 }
 
-.modal-sheet-title {
+.feature-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #d1d5db;
+}
+
+.feature-icon {
+  color: #D4FF24;
+}
+
+.activate-boost-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #ffffff;
-  font-size: 1.25rem;
+  border-radius: 10px;
+  height: 42px;
+  font-size: 13px;
   font-weight: 800;
-  margin: 0;
+  cursor: pointer;
 }
 
-.modal-sheet-sub {
-  color: #8e8e90;
-  font-size: 0.82rem;
-  margin: 0;
+.activate-boost-btn.btn-highlight {
+  background: #D4FF24;
+  color: #050800;
+  border: none;
 }
 
-.plan-price-confirm {
+/* ================= PERFIL ================= */
+.profile-main-card {
+  background: #070a10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.profile-top-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.avatar-ring-box {
+  position: relative;
+}
+
+.worker-avatar-img {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #D4FF24;
+}
+
+.level-indicator-tag {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #D4FF24;
+  color: #050800;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 99px;
+}
+
+.worker-badge-role {
+  font-size: 11px;
+  color: #D4FF24;
+  font-weight: 700;
+}
+
+.worker-name-big {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 2px 0 4px;
+}
+
+.worker-rating-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+}
+
+.star-gold {
+  color: #facc15;
+}
+
+.jobs-counter-text {
+  color: #9ca3af;
+}
+
+.specialty-selector-box {
+  margin-bottom: 16px;
+}
+
+.spec-label {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.xp-container {
+  background: #0b0f17;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.xp-labels-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: #111420;
-  border: 1px solid #1c263c;
-  padding: 10px 14px;
-  border-radius: 10px;
+  font-size: 12px;
+  margin-bottom: 6px;
 }
 
-.neon-price {
-  color: #D4FF24;
-  font-size: 1.3rem;
-  font-weight: 800;
+.xp-bar-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
 }
 
-.payment-methods-grid {
+.xp-bar-fill {
+  height: 100%;
+  background: #D4FF24;
+}
+
+.badges-chips-wrap {
   display: flex;
-  gap: 10px;
-}
-
-.method-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  background: #141722;
-  border: 1px solid #242c3d;
-  color: #cdcdce;
-  padding: 14px 8px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.method-btn ion-icon {
-  font-size: 1.5rem;
-  color: #5d93f7;
-}
-
-.method-btn.active {
-  border-color: #D4FF24;
-  background: rgba(212, 255, 36, 0.1);
-  color: #ffffff;
-}
-
-.method-btn.active ion-icon {
-  color: #D4FF24;
-}
-
-.quick-amounts-row {
-  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.amt-btn {
-  flex: 1;
-  background: #141722;
-  border: 1px solid #242c3d;
-  color: #ffffff;
+.badge-pill-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.neon-icon {
+  color: #D4FF24;
+}
+
+.reset-presentation-box {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.reset-presentation-btn {
+  width: 100%;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  border-radius: 10px;
+  height: 44px;
+  font-size: 12.5px;
   font-weight: 700;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
 }
 
-.amt-btn.active {
-  background: #1558C9;
-  border-color: #1558C9;
+/* ================= MODAIS ================= */
+.modal-sheet-inner {
+  --background: #0b0e14;
+  --color: #ffffff;
 }
 
-.btn-confirm-payment {
-  --background: #D4FF24;
-  --color: #030407;
+.modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.sheet-title {
+  font-size: 18px;
   font-weight: 800;
-  height: 46px;
-  margin-top: 10px;
+  margin: 0;
 }
 
-.btn-confirm-payment[disabled] {
-  opacity: 0.4;
+.sheet-subtitle {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin: 3px 0 0;
 }
 
-.counter-tax-preview {
-  font-size: 0.8rem;
-  color: #8e8e90;
+.btn-close-modal {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #9ca3af;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
-.counter-tax-preview strong {
+.withdraw-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #d1d5db;
+}
+
+.modal-dark-input {
+  background: #111622;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.quick-recharge-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+
+.quick-amt-btn {
+  background: #111622;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d1d5db;
+  border-radius: 10px;
+  height: 42px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quick-amt-btn.active {
+  background: rgba(212, 255, 36, 0.14);
+  border-color: #D4FF24;
   color: #D4FF24;
+}
+
+.confirm-recharge-btn {
+  width: 100%;
+  background: #D4FF24;
+  color: #050800;
+  border: none;
+  border-radius: 10px;
+  height: 46px;
+  font-size: 13.5px;
+  font-weight: 900;
+  cursor: pointer;
 }
 </style>
