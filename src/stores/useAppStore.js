@@ -14,12 +14,16 @@ export const CATEGORY_CONFIGS = {
     desc: 'Garçons, bartenders e apoio de salão para festas e eventos.',
     icon: 'wine',
     defaultPrice: 200,
+    defaultStart: '18:00',
+    defaultEnd: '00:00',
     serviceTypeLabel: 'Tipo de evento',
     serviceTypes: ['Aniversário', 'Casamento', 'Churrasco', 'Corporativo', 'Jantar'],
-    scopeLabel: 'Quantidade',
+    scopeLabel: 'Quantidade de profissionais',
     scopes: ['1 garçom', '2 garçons', '3 ou mais'],
-    detailsLabel: 'Local ou nº de convidados',
-    detailsPlaceholder: 'Ex: 50 pessoas • Salão de Festas',
+    locationLabel: 'Local do evento',
+    locationPlaceholder: 'Ex: Espaço Villa Real • Bairro Caçari',
+    detailsLabel: 'Breve descrição do atendimento',
+    detailsPlaceholder: 'Ex: Servir bebidas e salgados para 50 convidados, traje social preto',
     prices: [150, 200, 250, 320]
   },
   Eletricista: {
@@ -33,12 +37,16 @@ export const CATEGORY_CONFIGS = {
     desc: 'Instalação de tomadas, chuveiros, disjuntores e luminárias.',
     icon: 'flash',
     defaultPrice: 150,
+    defaultStart: '09:00',
+    defaultEnd: '12:00',
     serviceTypeLabel: 'Qual o serviço elétrico?',
     serviceTypes: ['Curto / Disjuntor', 'Chuveiro Elétrico', 'Tomadas & LEDs', 'Instalação Geral'],
     scopeLabel: 'Porte do serviço',
     scopes: ['Reparo simples', 'Instalação média', 'Revisão completa'],
-    detailsLabel: 'Endereço ou observação',
-    detailsPlaceholder: 'Ex: Disjuntor desarmando no quadro principal',
+    locationLabel: 'Endereço do imóvel',
+    locationPlaceholder: 'Ex: Rua das Palmeiras, 420 • Centro',
+    detailsLabel: 'Breve descrição do problema',
+    detailsPlaceholder: 'Ex: Disjuntor do chuveiro 220V desarmando após 5 minutos ligado',
     prices: [100, 150, 200, 280]
   },
   Diarista: {
@@ -52,12 +60,16 @@ export const CATEGORY_CONFIGS = {
     desc: 'Faxina completa, limpeza pós-obra e organização residencial.',
     icon: 'sparkles',
     defaultPrice: 160,
+    defaultStart: '08:00',
+    defaultEnd: '16:00',
     serviceTypeLabel: 'Tipo de limpeza',
     serviceTypes: ['Faxina Completa', 'Limpeza Leve', 'Pós-Obra', 'Passar Roupa'],
     scopeLabel: 'Tamanho do imóvel',
     scopes: ['1 a 2 quartos', '3 quartos', 'Casa grande / Empresa'],
-    detailsLabel: 'Endereço ou observação',
-    detailsPlaceholder: 'Ex: Trazer produtos • Foco em cozinha e banheiros',
+    locationLabel: 'Endereço do imóvel',
+    locationPlaceholder: 'Ex: Condomínio Parque das Águas • Paraviana',
+    detailsLabel: 'Breve descrição da limpeza',
+    detailsPlaceholder: 'Ex: Limpeza detalhada de cozinha, 2 banheiros e vidros da varanda',
     prices: [130, 160, 200, 240]
   },
   Encanador: {
@@ -71,12 +83,16 @@ export const CATEGORY_CONFIGS = {
     desc: 'Detecção de vazamentos, desentupimento e troca de torneiras.',
     icon: 'water',
     defaultPrice: 140,
+    defaultStart: '14:00',
+    defaultEnd: '17:00',
     serviceTypeLabel: 'Qual o problema hidráulico?',
     serviceTypes: ['Vazamento Pia / Vaso', 'Desentupimento', 'Troca de Torneira', 'Caixa d’Água'],
     scopeLabel: 'Urgência',
     scopes: ['Emergência hoje', 'Reparo simples', 'Manutenção'],
-    detailsLabel: 'Endereço ou observação',
-    detailsPlaceholder: 'Ex: Sifão da pia da cozinha pingando',
+    locationLabel: 'Endereço do atendimento',
+    locationPlaceholder: 'Ex: Av. Ville Roy, 850 • São Pedro',
+    detailsLabel: 'Breve descrição do reparo',
+    detailsPlaceholder: 'Ex: Sifão da pia da cozinha pingando e registro com pouca pressão',
     prices: [100, 140, 180, 250]
   },
   Reformas: {
@@ -90,12 +106,16 @@ export const CATEGORY_CONFIGS = {
     desc: 'Suporte de TV, montagem de móveis, pintura e pequenos reparos.',
     icon: 'construct',
     defaultPrice: 130,
+    defaultStart: '09:00',
+    defaultEnd: '13:00',
     serviceTypeLabel: 'Qual reparo precisa?',
     serviceTypes: ['Suporte TV / Painel', 'Pintura', 'Fechaduras & Portas', 'Montagem de Móveis'],
     scopeLabel: 'Volume de tarefas',
     scopes: ['1 item rápido', '2 a 3 itens', 'Diária completa'],
-    detailsLabel: 'Endereço ou observação',
-    detailsPlaceholder: 'Ex: Instalar TV 55" na parede da sala',
+    locationLabel: 'Endereço do atendimento',
+    locationPlaceholder: 'Ex: Bairro Aparecida • Boa Vista - RR',
+    detailsLabel: 'Breve descrição do serviço',
+    detailsPlaceholder: 'Ex: Instalar suporte articulado de TV 55" em parede de alvenaria',
     prices: [100, 130, 170, 220]
   }
 };
@@ -122,6 +142,7 @@ export const useAppStore = defineStore('app', () => {
     horarioFim: '00:00',
     qtdProfissionais: '2 garçons',
     tipoEvento: 'Aniversário',
+    local: '',
     descricao: '',
     valorOferecido: 200
   });
@@ -576,13 +597,19 @@ export const useAppStore = defineStore('app', () => {
     const escopo = (!isDirectPro && proOrData?.qtdProfissionais) || eventForm.value.qtdProfissionais;
     const priceVal = Number((!isDirectPro && proOrData?.valorOferecido) || eventForm.value.valorOferecido) || 150;
 
+    const startTime = (!isDirectPro && proOrData?.horarioInicio) || eventForm.value.horarioInicio || '18:00';
+    const endTime = (!isDirectPro && proOrData?.horarioFim) || eventForm.value.horarioFim || '00:00';
+    const locText = (!isDirectPro && proOrData?.local) || eventForm.value.local || 'Boa Vista - RR';
+    const descText = (!isDirectPro && proOrData?.descricao) || eventForm.value.descricao || `Atendimento de ${cat.toLowerCase()} (${tipo.toLowerCase()}).`;
+
     const newOrd = {
       id: `ord-${Date.now()}`,
       categoria: cat,
       title: `${cat} • ${tipo} (${escopo})`,
       date: (!isDirectPro && proOrData?.data) || eventForm.value.data,
-      time: (!isDirectPro && proOrData?.horarioInicio) || eventForm.value.horarioInicio,
-      location: (!isDirectPro && proOrData?.descricao) || eventForm.value.descricao || 'Boa Vista - RR',
+      time: `${startTime} às ${endTime}`,
+      location: locText,
+      description: descText,
       budget: priceVal,
       price: priceVal,
       status: 'IN_PROGRESS',
@@ -608,12 +635,12 @@ export const useAppStore = defineStore('app', () => {
       clientAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
       budget: newOrd.budget,
       date: newOrd.date,
-      time: newOrd.time,
-      endTime: eventForm.value.horarioFim || '22:00',
+      time: startTime,
+      endTime: endTime,
       proCount: escopo,
       scope: escopo,
-      location: newOrd.location,
-      description: `Solicitação de ${cat.toLowerCase()} para ${tipo.toLowerCase()}.`,
+      location: locText,
+      description: descText,
       photoUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80'
     });
 
@@ -765,6 +792,7 @@ export const useAppStore = defineStore('app', () => {
       horarioFim: '00:00',
       qtdProfissionais: '2 garçons',
       tipoEvento: 'Aniversário',
+      local: '',
       descricao: '',
       valorOferecido: 200
     };

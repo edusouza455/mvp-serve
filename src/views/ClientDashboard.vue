@@ -11,7 +11,7 @@
 
           <!-- Links de Navegação no Desktop -->
           <nav class="desktop-nav ion-hide-md-down">
-            <a href="/" class="nav-item" @click.prevent="goToHome">
+            <a href="/home" class="nav-item" @click.prevent="goToHome">
               <ion-icon :icon="homeOutline"></ion-icon>
               <span>Início</span>
             </a>
@@ -30,7 +30,7 @@
             </a>
           </nav>
 
-          <!-- Ações Rápidas Mobile (Navegação principal fica no BottomNav global) -->
+          <!-- Ação Rápida de Chat no Mobile -->
           <div class="mobile-nav-actions ion-hide-md-up">
             <button class="mobile-icon-btn" aria-label="Mensagens" title="Abrir Chat" @click="openChatModalDirect">
               <ion-icon :icon="chatbubbleOutline"></ion-icon>
@@ -43,30 +43,14 @@
     <ion-content :fullscreen="true" class="dashboard-content">
       <div class="page-wrapper">
 
-        <!-- SELETOR DE CATEGORIAS MINIMALISTA (MOBILE-FIRST) -->
-        <div class="category-selection-wrapper">
-          <div class="categories-scroll-bar">
-            <button
-              v-for="cat in store.categoriesList"
-              :key="cat.id"
-              class="category-pill-btn"
-              :class="{ active: selectedCategoryName === cat.name }"
-              @click="setCategory(cat.name)"
-            >
-              <ion-icon :icon="getCategoryIcon(cat.icon)" class="cat-pill-icon"></ion-icon>
-              <span class="cat-pill-text">{{ cat.label }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- GRID PRINCIPAL: HERO + FORMULÁRIO (7) & DESTAQUES (5) -->
+        <!-- GRID PRINCIPAL PADRÃO (7x5 no Desktop | Empilhado Fluido no Mobile) -->
         <ion-grid class="ion-no-padding main-grid">
           <ion-row class="hero-form-row">
             
-            <!-- COLUNA ESQUERDA (Mobile: 100% | Desktop: 7/12) -->
+            <!-- COLUNA ESQUERDA: TÍTULO DINÂMICO + FORMULÁRIO PRECISO (Mobile: 100% | Desktop: 7/12) -->
             <ion-col size="12" size-lg="7" class="left-col">
               
-              <!-- Título & Subtítulo Limpos e Minimalistas (Sem botão "alternar") -->
+              <!-- Título & Subtítulo com Seletor Contextual Integrado -->
               <div class="hero-header-box">
                 <h1 class="hero-headline">
                   Encontre o <span class="neon-highlight">{{ activeConfig.noun }} ideal</span> {{ activeConfig.headlineSuffix }}.
@@ -76,7 +60,7 @@
                 </p>
               </div>
 
-              <!-- CARD DO FORMULÁRIO MINIMALISTA -->
+              <!-- CARD DO FORMULÁRIO PADRÃO (+SERVE) -->
               <div id="form-event-card" class="form-card-container">
                 
                 <!-- BANNER QUANDO HÁ UM PROFISSIONAL SELECIONADO -->
@@ -95,137 +79,208 @@
                 </div>
 
                 <div class="form-fields-grid">
-                  
-                  <!-- 1. O QUE VOCÊ PRECISA? -->
+
+                  <!-- 1. SELETOR INTUITIVO DE PROFISSIONAL / MODALIDADE (INTEGRADO AO FORMULÁRIO) -->
                   <div class="form-section-block">
-                    <label class="field-label-clean">{{ activeConfig.serviceTypeLabel }}</label>
-                    <div class="quick-chips-grid">
+                    <div class="section-label-row">
+                      <label class="field-label-clean">
+                        <ion-icon :icon="briefcaseOutline" class="label-neon-icon"></ion-icon>
+                        <span>Qual profissional você precisa?</span>
+                      </label>
+                    </div>
+
+                    <div class="integrated-role-selector">
                       <button
-                        v-for="opt in activeConfig.serviceTypes"
-                        :key="opt"
+                        v-for="cat in store.categoriesList"
+                        :key="cat.id"
                         type="button"
-                        class="choice-chip-btn"
-                        :class="{ active: store.eventForm.tipoEvento === opt }"
-                        @click="selectServiceType(opt)"
+                        class="role-tab-btn"
+                        :class="{ active: selectedCategoryName === cat.name }"
+                        @click="setCategory(cat.name)"
                       >
-                        {{ opt }}
+                        <ion-icon :icon="getCategoryIcon(cat.icon)" class="role-tab-icon"></ion-icon>
+                        <span>{{ cat.name }}</span>
                       </button>
                     </div>
                   </div>
 
-                  <!-- 2. QUANDO PRECISA? -->
+                  <!-- 2. DATA, INÍCIO E FIM DO EVENTO / ATENDIMENTO (PRECISO COMO NO DESIGN PADRÃO) -->
                   <div class="form-section-block">
-                    <label class="field-label-clean">Quando você precisa?</label>
-                    
-                    <div class="quick-chips-grid dates-grid">
-                      <button
-                        v-for="dateOpt in quickDateOptions"
-                        :key="dateOpt.id"
-                        type="button"
-                        class="choice-chip-btn date-chip"
-                        :class="{ active: activeDateMode === dateOpt.id }"
-                        @click="selectDateMode(dateOpt.id)"
-                      >
-                        <span>{{ dateOpt.icon }}</span>
-                        <span>{{ dateOpt.label }}</span>
-                      </button>
+                    <div class="section-label-row">
+                      <label class="field-label-clean">
+                        <ion-icon :icon="calendarOutline" class="label-neon-icon"></ion-icon>
+                        <span>Quando você precisa do profissional?</span>
+                      </label>
+                      <div class="quick-date-links">
+                        <button
+                          type="button"
+                          class="tiny-date-shortcut"
+                          :class="{ active: activeDateShortcut === 'today' }"
+                          @click="applyDateShortcut('today')"
+                        >
+                          Hoje
+                        </button>
+                        <button
+                          type="button"
+                          class="tiny-date-shortcut"
+                          :class="{ active: activeDateShortcut === 'tomorrow' }"
+                          @click="applyDateShortcut('tomorrow')"
+                        >
+                          Amanhã
+                        </button>
+                      </div>
                     </div>
 
-                    <!-- Horários Rápidos (quando Hoje ou Amanhã está ativo) -->
-                    <div v-if="activeDateMode !== 'custom'" class="time-pills-row">
-                      <span class="time-pill-label">Horário:</span>
-                      <button
-                        v-for="slot in ['09:00', '14:00', '18:00', '20:00']"
-                        :key="slot"
-                        type="button"
-                        class="time-slot-pill"
-                        :class="{ active: store.eventForm.horarioInicio === slot }"
-                        @click="store.eventForm.horarioInicio = slot"
-                      >
-                        {{ slot }}
-                      </button>
-                    </div>
-
-                    <!-- Seletores de Data/Hora (apenas quando "Escolher Data" é selecionado) -->
-                    <div v-else class="datetime-compact-row">
-                      <div class="input-block">
-                        <label class="field-sublabel">Data</label>
-                        <div class="input-with-icon">
-                          <ion-icon :icon="calendarOutline" class="inner-icon"></ion-icon>
-                          <input type="date" v-model="store.eventForm.data" class="clean-input" />
+                    <!-- Grade de 3 Colunas: Data | Início | Fim (Fiel à Referência Original) -->
+                    <div class="precise-datetime-grid">
+                      <div class="boxed-field date-col">
+                        <ion-icon :icon="calendarOutline" class="boxed-icon"></ion-icon>
+                        <div class="boxed-inner">
+                          <span class="boxed-label">Data do evento</span>
+                          <input
+                            type="date"
+                            v-model="store.eventForm.data"
+                            @change="activeDateShortcut = 'custom'"
+                            class="boxed-input"
+                          />
                         </div>
                       </div>
 
-                      <div class="input-block">
-                        <label class="field-sublabel">Início</label>
-                        <div class="input-with-icon">
-                          <ion-icon :icon="timeOutline" class="inner-icon"></ion-icon>
-                          <input type="time" v-model="store.eventForm.horarioInicio" class="clean-input" />
+                      <div class="boxed-field time-col">
+                        <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
+                        <div class="boxed-inner">
+                          <span class="boxed-label">Início</span>
+                          <input
+                            type="time"
+                            v-model="store.eventForm.horarioInicio"
+                            class="boxed-input"
+                          />
                         </div>
+                      </div>
+
+                      <div class="boxed-field time-col">
+                        <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
+                        <div class="boxed-inner">
+                          <span class="boxed-label">Fim (Até)</span>
+                          <input
+                            type="time"
+                            v-model="store.eventForm.horarioFim"
+                            class="boxed-input"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Resumo automático de duração -->
+                    <div class="duration-helper-bar">
+                      <span>⏱️ Período agendado: <strong>{{ formattedDateBR }}</strong> das <strong>{{ store.eventForm.horarioInicio }}</strong> às <strong>{{ store.eventForm.horarioFim }}</strong> ({{ calculatedDuration }})</span>
+                    </div>
+                  </div>
+
+                  <!-- 3. QUANTIDADE / ESCOPO & TIPO DE EVENTO (2 COLUNAS LADO A LADO COMO NO PADRÃO) -->
+                  <div class="two-cols-boxed-row">
+                    <!-- Coluna 1: Quantidade / Porte -->
+                    <div class="boxed-field">
+                      <ion-icon :icon="peopleOutline" class="boxed-icon"></ion-icon>
+                      <div class="boxed-inner">
+                        <span class="boxed-label">{{ activeConfig.scopeLabel }}</span>
+                        <select v-model="store.eventForm.qtdProfissionais" class="boxed-select">
+                          <option v-for="sc in activeConfig.scopes" :key="sc" :value="sc">
+                            {{ sc }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Coluna 2: Tipo de Evento / Serviço -->
+                    <div class="boxed-field">
+                      <ion-icon :icon="sparklesOutline" class="boxed-icon"></ion-icon>
+                      <div class="boxed-inner">
+                        <span class="boxed-label">{{ activeConfig.serviceTypeLabel }}</span>
+                        <select v-model="store.eventForm.tipoEvento" class="boxed-select">
+                          <option v-for="opt in activeConfig.serviceTypes" :key="opt" :value="opt">
+                            {{ opt }}
+                          </option>
+                        </select>
                       </div>
                     </div>
                   </div>
 
-                  <!-- 3. ESCOPO / PORTE + OBSERVAÇÃO OPCIONAL -->
-                  <div class="form-section-block">
-                    <label class="field-label-clean">{{ activeConfig.scopeLabel }}</label>
-                    
-                    <div class="quick-chips-grid scopes-grid">
-                      <button
-                        v-for="sc in activeConfig.scopes"
-                        :key="sc"
-                        type="button"
-                        class="choice-chip-btn"
-                        :class="{ active: store.eventForm.qtdProfissionais === sc }"
-                        @click="store.eventForm.qtdProfissionais = sc"
-                      >
-                        {{ sc }}
-                      </button>
-                    </div>
-
-                    <div class="input-with-icon ion-margin-top">
-                      <ion-icon :icon="locationOutline" class="inner-icon"></ion-icon>
-                      <input
-                        type="text"
-                        v-model="store.eventForm.descricao"
-                        :placeholder="activeConfig.detailsPlaceholder"
-                        class="clean-input"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- 4. VALOR OFERECIDO -->
-                  <div class="form-section-block value-section">
-                    <div class="value-header-line">
-                      <label class="field-label-clean">Valor oferecido (R$)</label>
-                      <span class="value-hint">Sugestão editável</span>
-                    </div>
-
-                    <div class="value-stepper-container">
-                      <button type="button" class="stepper-btn" @click="adjustPrice(-10)">-</button>
-                      <div class="value-display-box">
-                        <span class="currency-tag">R$</span>
+                  <!-- 4. LOCAL DO EVENTO + BREVE DESCRIÇÃO -->
+                  <div class="location-desc-stack">
+                    <!-- Local -->
+                    <div class="boxed-field">
+                      <ion-icon :icon="locationOutline" class="boxed-icon"></ion-icon>
+                      <div class="boxed-inner">
+                        <span class="boxed-label">{{ activeConfig.locationLabel }}</span>
                         <input
-                          type="number"
-                          v-model.number="store.eventForm.valorOferecido"
-                          class="clean-input-price"
+                          type="text"
+                          v-model="store.eventForm.local"
+                          :placeholder="activeConfig.locationPlaceholder"
+                          class="boxed-input"
                         />
                       </div>
-                      <button type="button" class="stepper-btn plus" @click="adjustPrice(+10)">+</button>
                     </div>
 
-                    <div class="price-presets-row">
-                      <button
-                        v-for="p in activeConfig.prices"
-                        :key="p"
-                        type="button"
-                        class="price-preset-pill"
-                        :class="{ active: store.eventForm.valorOferecido === p }"
-                        @click="store.eventForm.valorOferecido = p"
-                      >
-                        R$ {{ p }}
-                      </button>
+                    <!-- Breve Descrição -->
+                    <div class="boxed-field">
+                      <ion-icon :icon="documentTextOutline" class="boxed-icon"></ion-icon>
+                      <div class="boxed-inner">
+                        <span class="boxed-label">{{ activeConfig.detailsLabel }}</span>
+                        <input
+                          type="text"
+                          v-model="store.eventForm.descricao"
+                          :placeholder="activeConfig.detailsPlaceholder"
+                          class="boxed-input"
+                        />
+                      </div>
                     </div>
+                  </div>
+
+                  <!-- 5. VALOR OFERECIDO POR PROFISSIONAL (PISO MÍNIMO DE R$ 50,00) -->
+                  <div class="boxed-field price-boxed-field" :class="{ 'min-price-alert': minPriceWarningActive }">
+                    <div class="price-left-meta">
+                      <div class="currency-circle">$</div>
+                      <div class="boxed-inner">
+                        <span class="boxed-label">Valor oferecido por profissional (Piso: R$ 50)</span>
+                        <div class="price-value-line">
+                          <span class="rs-prefix">R$</span>
+                          <input
+                            type="number"
+                            min="50"
+                            v-model.number="store.eventForm.valorOferecido"
+                            @blur="validateMinimumPrice"
+                            class="boxed-price-input"
+                          />
+                          <span class="rs-decimals">,00</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="price-stepper-controls">
+                      <button type="button" class="step-circle-btn" @click="adjustPrice(-10)" title="Diminuir R$ 10">−</button>
+                      <button type="button" class="step-circle-btn plus" @click="adjustPrice(10)" title="Aumentar R$ 10">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Aviso inline caso tente baixar de R$ 50 -->
+                  <div v-if="minPriceWarningActive" class="min-floor-inline-notice">
+                    ⚠️ O piso mínimo para contratação na plataforma é de <strong>R$ 50,00</strong>.
+                  </div>
+
+                  <!-- Sugestões rápidas de valor da categoria -->
+                  <div class="price-presets-row">
+                    <span class="preset-hint">Valores comuns para {{ activeConfig.noun }}:</span>
+                    <button
+                      v-for="p in activeConfig.prices"
+                      :key="p"
+                      type="button"
+                      class="price-preset-pill"
+                      :class="{ active: store.eventForm.valorOferecido === p }"
+                      @click="setPresetPrice(p)"
+                    >
+                      R$ {{ p }}
+                    </button>
                   </div>
 
                 </div>
@@ -236,40 +291,27 @@
                   <ion-icon :icon="arrowForwardOutline" class="btn-arrow"></ion-icon>
                 </button>
 
-                <!-- Rodapé de Confiança Compacto -->
+                <!-- Rodapé de Confiança Padrão -->
                 <div class="trust-footer-row">
                   <ion-icon :icon="shieldCheckmarkOutline" class="trust-shield-icon"></ion-icon>
-                  <span class="trust-items">Profissionais verificados • Avaliações reais • Pagamento protegido</span>
+                  <div class="trust-copy">
+                    <strong>Contrate com segurança</strong>
+                    <span>Profissionais verificados • Avaliações reais • Pagamento protegido</span>
+                  </div>
                 </div>
 
               </div>
             </ion-col>
 
-            <!-- COLUNA DIREITA: DESTAQUES DA SEMANA (Mobile: 100% | Desktop: 5/12) -->
+            <!-- COLUNA DIREITA: DESTAQUES DA SEMANA PADRÃO (Mobile: 100% | Desktop: 5/12) -->
             <ion-col size="12" size-lg="5" class="right-col">
-              
-              <!-- CARD 1: BANNER RECOMENDADO COMPACTO (Oculto em telas muito pequenas se já há Destaques, ou exibido de forma enxuta) -->
-              <div class="neon-service-card" @click="selectAndScrollToForm(currentCarouselPro)">
-                <div class="service-floating-badge">
-                  <img :src="currentCarouselPro.avatar" :alt="currentCarouselPro.nome" class="badge-mini-avatar" />
-                  <div class="badge-mini-info">
-                    <span class="badge-mini-tag">DISPONÍVEL AGORA • {{ selectedCategoryName.toUpperCase() }}</span>
-                    <strong class="badge-mini-name">{{ currentCarouselPro.nome }} (★ {{ currentCarouselPro.nota }})</strong>
-                  </div>
-                  <button class="badge-mini-action" @click.stop="selectAndScrollToForm(currentCarouselPro)">
-                    <span>Selecionar</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- CARD 2: DESTAQUES DA SEMANA -->
               <div class="highlights-card">
                 <div class="highlights-header">
                   <div class="highlights-title-row">
                     <ion-icon :icon="starOutline" class="highlight-star-icon"></ion-icon>
                     <h2 class="highlights-title">Destaques da semana</h2>
                   </div>
-                  <p class="highlights-subtitle">Mais contratados em {{ activeConfig.plural.toLowerCase() }}</p>
+                  <p class="highlights-subtitle">Profissionais mais contratados e bem avaliados em {{ activeConfig.plural.toLowerCase() }}</p>
                 </div>
 
                 <div class="highlights-list">
@@ -299,7 +341,7 @@
                 </div>
 
                 <button class="view-all-highlights-link" @click="scrollToAvailable">
-                  <span>Ver todos os {{ activeConfig.plural.toLowerCase() }}</span>
+                  <span>Ver todos os destaques</span>
                   <ion-icon :icon="arrowForwardOutline"></ion-icon>
                 </button>
               </div>
@@ -307,7 +349,7 @@
 
           </ion-row>
 
-          <!-- SEÇÃO: PROFISSIONAIS DISPONÍVEIS -->
+          <!-- SEÇÃO INFERIOR: PROFISSIONAIS DISPONÍVEIS PARA VOCÊ -->
           <ion-row id="available-section" class="available-section-row">
             <ion-col size="12">
               <div class="section-heading-row">
@@ -470,11 +512,11 @@
         </ion-content>
       </ion-modal>
 
-      <!-- ================= MODAL 3: CONFIRMAÇÃO DO PEDIDO ================= -->
+      <!-- ================= MODAL: CONFIRMAÇÃO DO PEDIDO ================= -->
       <ion-modal
         :is-open="isOrderSuccessModalOpen"
-        :breakpoints="[0, 0.72, 0.9]"
-        :initial-breakpoint="0.72"
+        :breakpoints="[0, 0.78, 0.92]"
+        :initial-breakpoint="0.78"
         @didDismiss="isOrderSuccessModalOpen = false"
         class="custom-modal-sheet"
       >
@@ -491,12 +533,16 @@
               <strong class="sum-val">{{ createdOrderData.categoria }} • {{ createdOrderData.tipoEvento }}</strong>
             </div>
             <div class="summary-line">
-              <span class="sum-label">Data e Horário:</span>
-              <span class="sum-val">{{ createdOrderData.data }} às {{ createdOrderData.horarioInicio }}</span>
+              <span class="sum-label">Início e Fim:</span>
+              <span class="sum-val">{{ createdOrderData.data }} ({{ createdOrderData.horarioInicio }} às {{ createdOrderData.horarioFim }})</span>
             </div>
             <div class="summary-line">
-              <span class="sum-label">Escopo:</span>
-              <span class="sum-val">{{ createdOrderData.qtdProfissionais }}</span>
+              <span class="sum-label">Local:</span>
+              <span class="sum-val">{{ createdOrderData.local || 'Boa Vista - RR' }}</span>
+            </div>
+            <div v-if="createdOrderData.descricao" class="summary-line">
+              <span class="sum-label">Descrição:</span>
+              <span class="sum-val">{{ createdOrderData.descricao }}</span>
             </div>
             <div class="summary-line">
               <span class="sum-label">Valor Oferecido:</span>
@@ -516,7 +562,7 @@
         </ion-content>
       </ion-modal>
 
-      <!-- ================= MODAL 4: SUPORTE 24H ================= -->
+      <!-- ================= MODAL: SUPORTE 24H ================= -->
       <ion-modal
         :is-open="isSupportModalOpen"
         :breakpoints="[0, 0.65, 0.85]"
@@ -563,8 +609,8 @@
       <ion-toast
         :is-open="showToast"
         :message="toastMsg"
-        :duration="2300"
-        position="bottom"
+        :duration="2600"
+        position="top"
         @didDismiss="showToast = false"
       ></ion-toast>
     </ion-content>
@@ -596,6 +642,9 @@ import {
   calendarOutline,
   timeOutline,
   personOutline,
+  peopleOutline,
+  briefcaseOutline,
+  documentTextOutline,
   arrowForwardOutline,
   shieldCheckmarkOutline,
   starOutline,
@@ -616,31 +665,23 @@ const store = useAppStore();
 
 const showToast = ref(false);
 const toastMsg = ref('');
+const minPriceWarningActive = ref(false);
 
-// Modais
-const isOrdersModalOpen = ref(false);
+// Modais locais
 const isProfileModalOpen = ref(false);
 const isOrderSuccessModalOpen = ref(false);
 const isSupportModalOpen = ref(false);
-const isProfileMenuModalOpen = ref(false);
 const activeModalPro = ref(null);
 const createdOrderData = ref(null);
 
-// Estado da Categoria e Filtros
+// Estado da Categoria e Datas
 const selectedCategoryName = ref('Garçom');
 const showAllPros = ref(false);
-const activeDateMode = ref('today');
+const activeDateShortcut = ref('today');
 
-// Fonte única de configuração importada da Store
 const activeConfig = computed(() => {
   return CATEGORY_CONFIGS[selectedCategoryName.value] || CATEGORY_CONFIGS.Garçom;
 });
-
-const quickDateOptions = [
-  { id: 'today', label: 'Hoje', icon: '⚡' },
-  { id: 'tomorrow', label: 'Amanhã', icon: '📅' },
-  { id: 'custom', label: 'Outra Data', icon: '🗓️' }
-];
 
 function getCategoryIcon(iconKey) {
   switch (iconKey) {
@@ -652,42 +693,87 @@ function getCategoryIcon(iconKey) {
   }
 }
 
+// A cada categoria selecionada, adapta todos os campos do formulário
 function setCategory(catName) {
   selectedCategoryName.value = catName;
   store.eventForm.categoria = catName;
+  minPriceWarningActive.value = false;
 
   const conf = CATEGORY_CONFIGS[catName] || CATEGORY_CONFIGS.Garçom;
   store.eventForm.tipoEvento = conf.serviceTypes[0];
   store.eventForm.qtdProfissionais = conf.scopes[1] || conf.scopes[0];
+  store.eventForm.horarioInicio = conf.defaultStart || '18:00';
+  store.eventForm.horarioFim = conf.defaultEnd || '00:00';
   store.eventForm.valorOferecido = conf.defaultPrice;
-  store.eventForm.descricao = '';
 
   if (store.selectedProfessional && store.selectedProfessional.categoria !== catName) {
     store.clearSelectedProfessional();
   }
 }
 
-function selectServiceType(opt) {
-  store.eventForm.tipoEvento = opt;
-}
-
-function selectDateMode(modeId) {
-  activeDateMode.value = modeId;
+function applyDateShortcut(mode) {
+  activeDateShortcut.value = mode;
   const now = new Date();
-  if (modeId === 'today') {
+  if (mode === 'today') {
     store.eventForm.data = now.toISOString().split('T')[0];
-    store.eventForm.horarioInicio = '18:00';
-  } else if (modeId === 'tomorrow') {
+  } else if (mode === 'tomorrow') {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     store.eventForm.data = tomorrow.toISOString().split('T')[0];
-    store.eventForm.horarioInicio = '14:00';
   }
 }
 
+const formattedDateBR = computed(() => {
+  const raw = store.eventForm.data;
+  if (!raw || !raw.includes('-')) return raw || 'Hoje';
+  const [y, m, d] = raw.split('-');
+  return `${d}/${m}/${y}`;
+});
+
+const calculatedDuration = computed(() => {
+  const start = store.eventForm.horarioInicio || '18:00';
+  const end = store.eventForm.horarioFim || '00:00';
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  if (isNaN(sh) || isNaN(eh)) return '6 horas';
+  let diffMinutes = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+  if (diffMinutes <= 0) diffMinutes += 24 * 60;
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  return mins > 0 ? `${hours}h${mins}min` : `${hours}h de duração`;
+});
+
+// Validação de Piso Mínimo de R$ 50,00 com Notificação
+function triggerMinimumFloorAlert() {
+  store.eventForm.valorOferecido = 50;
+  minPriceWarningActive.value = true;
+  toastMsg.value = '⚠️ O piso mínimo por diária na plataforma é de R$ 50,00.';
+  showToast.value = true;
+}
+
 function adjustPrice(delta) {
-  const current = Number(store.eventForm.valorOferecido) || 100;
-  store.eventForm.valorOferecido = Math.max(50, current + delta);
+  const current = Number(store.eventForm.valorOferecido) || 50;
+  const nextVal = current + delta;
+  if (nextVal < 50) {
+    triggerMinimumFloorAlert();
+    return;
+  }
+  minPriceWarningActive.value = false;
+  store.eventForm.valorOferecido = nextVal;
+}
+
+function validateMinimumPrice() {
+  const current = Number(store.eventForm.valorOferecido);
+  if (!current || current < 50) {
+    triggerMinimumFloorAlert();
+  } else {
+    minPriceWarningActive.value = false;
+  }
+}
+
+function setPresetPrice(p) {
+  minPriceWarningActive.value = false;
+  store.eventForm.valorOferecido = p;
 }
 
 const actionButtonText = computed(() => {
@@ -711,16 +797,12 @@ const displayedAvailablePros = computed(() => {
   return showAllPros.value ? filteredAvailable.value : filteredAvailable.value.slice(0, 3);
 });
 
-const currentCarouselPro = computed(() => {
-  return weeklyHighlights.value[0] || store.highlightedProfessionals[0];
-});
-
 function toggleShowMorePros() {
   showAllPros.value = !showAllPros.value;
 }
 
 onMounted(() => {
-  selectDateMode('today');
+  applyDateShortcut('today');
 
   if (route.query.category) {
     const cat = String(route.query.category);
@@ -786,6 +868,10 @@ function hireFromModal(pro) {
 }
 
 function handleConfirmOrder() {
+  if (!store.eventForm.valorOferecido || store.eventForm.valorOferecido < 50) {
+    triggerMinimumFloorAlert();
+    return;
+  }
   const newOrd = store.createNewOrder(store.selectedProfessional);
   createdOrderData.value = {
     ...store.eventForm,
@@ -847,16 +933,14 @@ function reportIssue() {
 
 .header-toolbar {
   --background: #030407;
-  --min-height: 60px;
-  --padding-start: 0;
-  --padding-end: 0;
+  --min-height: 58px;
 }
 
 .header-inner {
   max-width: 1180px;
   margin: 0 auto;
   padding: 0 16px;
-  height: 60px;
+  height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -871,14 +955,14 @@ function reportIssue() {
 
 .neon-plus {
   color: #D4FF24;
-  font-size: 28px;
+  font-size: 27px;
   font-weight: 900;
   line-height: 1;
 }
 
 .brand-name {
   color: #ffffff;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 900;
   font-style: italic;
   letter-spacing: 0.6px;
@@ -898,12 +982,6 @@ function reportIssue() {
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
-  transition: color 0.2s;
-  position: relative;
-}
-
-.nav-item:hover {
-  color: #D4FF24;
 }
 
 .orders-count-dot {
@@ -915,21 +993,7 @@ function reportIssue() {
   border-radius: 99px;
 }
 
-.orders-count-dot.mobile {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  padding: 1px 5px;
-}
-
-.mobile-nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .mobile-icon-btn {
-  position: relative;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #e5e7eb;
@@ -951,55 +1015,9 @@ function reportIssue() {
 .page-wrapper {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 12px 16px 96px;
+  padding: 16px 16px 96px;
 }
 
-/* ================= CATEGORIAS MINIMALISTAS ================= */
-.category-selection-wrapper {
-  margin-bottom: 18px;
-}
-
-.categories-scroll-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.categories-scroll-bar::-webkit-scrollbar {
-  display: none;
-}
-
-.category-pill-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: #090d15;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #9ca3af;
-  padding: 9px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.category-pill-btn.active {
-  background: rgba(212, 255, 36, 0.12);
-  border-color: #D4FF24;
-  color: #D4FF24;
-  font-weight: 700;
-}
-
-.cat-pill-icon {
-  font-size: 15px;
-}
-
-/* ================= HERO MINIMALISTA ================= */
 .left-col {
   padding-right: 0;
 }
@@ -1015,18 +1033,12 @@ function reportIssue() {
 }
 
 .hero-headline {
-  font-size: 26px;
+  font-size: clamp(25px, 4.2vw, 36px);
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.18;
   color: #ffffff;
   margin: 0 0 8px 0;
   letter-spacing: -0.4px;
-}
-
-@media (min-width: 768px) {
-  .hero-headline {
-    font-size: 36px;
-  }
 }
 
 .neon-highlight {
@@ -1040,10 +1052,10 @@ function reportIssue() {
   margin: 0;
 }
 
-/* ================= CARD DO FORMULÁRIO ================= */
+/* ================= CARD DO FORMULÁRIO PADRÃO (+SERVE) ================= */
 .form-card-container {
   background: #070a10;
-  border: 1px solid rgba(212, 255, 36, 0.25);
+  border: 1px solid rgba(212, 255, 36, 0.28);
   border-radius: 16px;
   padding: 18px 16px;
   margin-bottom: 20px;
@@ -1051,11 +1063,10 @@ function reportIssue() {
 
 @media (min-width: 768px) {
   .form-card-container {
-    padding: 24px 22px;
+    padding: 22px 22px;
   }
 }
 
-/* Banner de profissional selecionado */
 .selected-pro-card-banner {
   display: flex;
   align-items: center;
@@ -1085,7 +1096,6 @@ function reportIssue() {
   font-size: 9.5px;
   font-weight: 800;
   color: #D4FF24;
-  letter-spacing: 0.5px;
 }
 
 .selected-name-title {
@@ -1112,11 +1122,11 @@ function reportIssue() {
   cursor: pointer;
 }
 
-/* Blocos do Formulário */
+/* Campos do Formulário */
 .form-fields-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-section-block {
@@ -1125,193 +1135,293 @@ function reportIssue() {
   gap: 8px;
 }
 
-.field-label-clean {
-  font-size: 13px;
-  font-weight: 700;
-  color: #e5e7eb;
-}
-
-.quick-chips-grid {
+.section-label-row {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 7px;
 }
 
-.choice-chip-btn {
+.field-label-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.label-neon-icon {
+  color: #D4FF24;
+  font-size: 17px;
+}
+
+/* Seletor Integrado de Modalidade */
+.integrated-role-selector {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
   background: #0b0f17;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #d1d5db;
-  padding: 9px 13px;
-  border-radius: 10px;
-  font-size: 12.5px;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+@media (max-width: 520px) {
+  .integrated-role-selector {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .integrated-role-selector::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.role-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #9ca3af;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 12px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.choice-chip-btn.active {
-  background: rgba(212, 255, 36, 0.12);
-  border-color: #D4FF24;
-  color: #D4FF24;
-  font-weight: 700;
-}
-
-.dates-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.date-chip {
   justify-content: center;
-  padding: 10px 6px;
+  gap: 5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.16s ease;
 }
 
-.time-pills-row {
+.role-tab-btn.active {
+  background: rgba(212, 255, 36, 0.14);
+  border-color: rgba(212, 255, 36, 0.45);
+  color: #D4FF24;
+  font-weight: 800;
+}
+
+.role-tab-icon {
+  font-size: 14px;
+}
+
+/* Atalhos rápidos Hoje / Amanhã */
+.quick-date-links {
   display: flex;
-  align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 2px;
 }
 
-.time-pill-label {
-  font-size: 11.5px;
+.tiny-date-shortcut {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #9ca3af;
-  margin-right: 2px;
-}
-
-.time-slot-pill {
-  background: #0b0f17;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #9ca3af;
-  padding: 5px 11px;
-  border-radius: 8px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
   cursor: pointer;
 }
 
-.time-slot-pill.active {
+.tiny-date-shortcut.active {
   background: rgba(212, 255, 36, 0.14);
   border-color: #D4FF24;
   color: #D4FF24;
 }
 
-.datetime-compact-row {
+/* Grade de Data, Início e Fim (Fiel à imagem de referência) */
+.precise-datetime-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 8px;
 }
 
-.field-sublabel {
-  font-size: 11px;
-  color: #9ca3af;
-  margin-bottom: 4px;
-  display: block;
+.precise-datetime-grid .date-col {
+  grid-column: span 2;
 }
 
-.input-with-icon {
+@media (min-width: 600px) {
+  .precise-datetime-grid {
+    grid-template-columns: 1.35fr 1fr 1fr;
+  }
+  .precise-datetime-grid .date-col {
+    grid-column: span 1;
+  }
+}
+
+/* Campos em Caixa Padrão (+SERVE) */
+.boxed-field {
+  background: #0b0f17;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #0b0f17;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 10px;
-  padding: 9px 12px;
+  gap: 10px;
+  transition: border-color 0.18s;
 }
 
-.inner-icon {
+.boxed-field:focus-within {
+  border-color: rgba(212, 255, 36, 0.55);
+}
+
+.boxed-icon {
   color: #D4FF24;
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
-.clean-input {
+.boxed-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.boxed-label {
+  font-size: 10.5px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.boxed-input,
+.boxed-select {
   background: transparent;
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 700;
   width: 100%;
+  padding: 0;
   color-scheme: dark;
 }
 
-/* Valor Oferecido */
-.value-section {
+.boxed-select option {
   background: #0b0f17;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
-  padding: 12px;
+  color: #ffffff;
 }
 
-.value-header-line {
+.duration-helper-bar {
+  font-size: 11.5px;
+  color: #9ca3af;
+  padding-left: 2px;
+}
+
+.duration-helper-bar strong {
+  color: #e5e7eb;
+}
+
+/* Duas colunas para Quantidade & Tipo de Evento */
+.two-cols-boxed-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 540px) {
+  .two-cols-boxed-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.location-desc-stack {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Campo de Valor Oferecido (Piso R$ 50) */
+.price-boxed-field {
   justify-content: space-between;
 }
 
-.value-hint {
-  font-size: 11px;
+.price-boxed-field.min-price-alert {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.price-left-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.currency-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid #D4FF24;
+  color: #D4FF24;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.price-value-line {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.rs-prefix {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.boxed-price-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  width: 58px;
+  padding: 0;
+}
+
+.rs-decimals {
+  font-size: 13px;
+  font-weight: 700;
   color: #9ca3af;
 }
 
-.value-stepper-container {
+.price-stepper-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  background: #06090e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 6px 10px;
+  gap: 6px;
 }
 
-.stepper-btn {
-  width: 34px;
-  height: 34px;
+.step-circle-btn {
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   cursor: pointer;
 }
 
-.stepper-btn.plus {
+.step-circle-btn.plus {
   background: rgba(212, 255, 36, 0.14);
   border-color: rgba(212, 255, 36, 0.4);
   color: #D4FF24;
 }
 
-.value-display-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.currency-tag {
-  font-size: 15px;
-  font-weight: 800;
-  color: #D4FF24;
-}
-
-.clean-input-price {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: 900;
-  width: 76px;
-  text-align: center;
+.min-floor-inline-notice {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
 }
 
 .price-presets-row {
@@ -1321,13 +1431,18 @@ function reportIssue() {
   flex-wrap: wrap;
 }
 
+.preset-hint {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
 .price-preset-pill {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #9ca3af;
   font-size: 11.5px;
   font-weight: 600;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: 99px;
   cursor: pointer;
 }
@@ -1361,8 +1476,7 @@ function reportIssue() {
 .trust-footer-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 10px;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -1370,68 +1484,26 @@ function reportIssue() {
 
 .trust-shield-icon {
   color: #D4FF24;
-  font-size: 18px;
+  font-size: 22px;
   flex-shrink: 0;
 }
 
-.trust-items {
-  font-size: 11.5px;
-  color: #9ca3af;
-}
-
-/* ================= COLUNA DIREITA ================= */
-.neon-service-card {
-  background: #070a10;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 12px;
-  margin-bottom: 14px;
-  cursor: pointer;
-}
-
-.service-floating-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.badge-mini-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #D4FF24;
-}
-
-.badge-mini-info {
-  flex: 1;
+.trust-copy {
   display: flex;
   flex-direction: column;
 }
 
-.badge-mini-tag {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #D4FF24;
-}
-
-.badge-mini-name {
-  font-size: 13px;
+.trust-copy strong {
+  font-size: 12.5px;
   color: #ffffff;
 }
 
-.badge-mini-action {
-  background: rgba(212, 255, 36, 0.14);
-  border: 1px solid rgba(212, 255, 36, 0.4);
-  color: #D4FF24;
+.trust-copy span {
   font-size: 11.5px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
+  color: #9ca3af;
 }
 
-/* Card Destaques */
+/* ================= COLUNA DIREITA: DESTAQUES ================= */
 .highlights-card {
   background: #070a10;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1857,153 +1929,6 @@ function reportIssue() {
   cursor: pointer;
 }
 
-.orders-modal-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.modal-order-card {
-  background: #111622;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px;
-}
-
-.order-top-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.order-cat-tag {
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #D4FF24;
-  text-transform: uppercase;
-}
-
-.order-status-badge {
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 99px;
-}
-
-.status-ongoing {
-  background: rgba(212, 255, 36, 0.14);
-  color: #D4FF24;
-}
-
-.status-done {
-  background: rgba(34, 197, 94, 0.16);
-  color: #4ade80;
-}
-
-.status-cancelled {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-}
-
-.order-card-title {
-  font-size: 14.5px;
-  font-weight: 700;
-  margin: 0 0 6px;
-}
-
-.order-meta-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #9ca3af;
-  margin-bottom: 12px;
-}
-
-.order-footer-pro-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  flex-wrap: wrap;
-}
-
-.order-pro-avatar-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.order-pro-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.order-pro-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.pro-small-name {
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-.pro-small-rating {
-  font-size: 11px;
-  color: #facc15;
-}
-
-.order-actions-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.open-chat-from-order-btn {
-  background: rgba(212, 255, 36, 0.12);
-  border: 1px solid rgba(212, 255, 36, 0.35);
-  color: #D4FF24;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 11.5px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-}
-
-.complete-order-btn {
-  background: #D4FF24;
-  border: none;
-  color: #050800;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 11.5px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-}
-
-.cancel-order-btn {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-/* Modal Perfil */
 .pro-modal-category {
   font-size: 11px;
   font-weight: 800;
@@ -2125,7 +2050,6 @@ function reportIssue() {
   cursor: pointer;
 }
 
-/* Modal Sucesso */
 .text-center {
   text-align: center;
 }
@@ -2155,6 +2079,7 @@ function reportIssue() {
 .summary-line {
   display: flex;
   justify-content: space-between;
+  gap: 10px;
   font-size: 12.5px;
   padding: 6px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -2166,6 +2091,11 @@ function reportIssue() {
 
 .sum-label {
   color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.sum-val {
+  text-align: right;
 }
 
 .neon-color {
@@ -2204,7 +2134,6 @@ function reportIssue() {
   cursor: pointer;
 }
 
-/* Opções de Suporte / Conta */
 .support-options-list {
   display: flex;
   flex-direction: column;
