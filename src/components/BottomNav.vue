@@ -1,7 +1,65 @@
 <template>
-  <!-- BARRA DE NAVEGAÇÃO INFERIOR GLOBAL (4 ABAS PRINCIPAIS: INÍCIO, BUSCA, PEDIDOS, PERFIL) -->
-  <nav class="global-bottom-nav" aria-label="Navegação Principal">
-    <div class="bottom-nav-inner">
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR GLOBAL (ADAPTATIVA: CLIENTE vs PRESTADOR DE SERVIÇO) -->
+  <nav class="global-bottom-nav" :class="{ 'provider-mode-nav': isProviderMode }" aria-label="Navegação Principal">
+    <!-- MODO PRESTADOR DE SERVIÇO: MEUS SERVIÇOS (AGENDA + PROPOSTAS), IMPULSOS, CARTEIRA E PERFIL -->
+    <div v-if="isProviderMode" class="bottom-nav-inner provider-nav-grid">
+      <!-- 1. MEUS SERVIÇOS (SUA AGENDA + PROPOSTAS) -->
+      <button
+        type="button"
+        class="nav-tab-btn"
+        :class="{ active: activeTab === 'servicos' }"
+        @click="handleProviderTab('servicos')"
+      >
+        <div class="icon-wrap">
+          <ion-icon :icon="activeTab === 'servicos' ? briefcase : briefcaseOutline" class="tab-icon"></ion-icon>
+          <span v-if="providerActiveCount > 0" class="tab-badge-count">{{ providerActiveCount }}</span>
+        </div>
+        <span class="tab-label">Meus Serviços</span>
+      </button>
+
+      <!-- 2. IMPULSOS (ABRE O MODAL DE IMPULSOS) -->
+      <button
+        type="button"
+        class="nav-tab-btn"
+        :class="{ active: activeTab === 'impulsos' }"
+        @click="openProviderBoostModal"
+      >
+        <div class="icon-wrap">
+          <ion-icon :icon="activeTab === 'impulsos' ? rocket : rocketOutline" class="tab-icon"></ion-icon>
+        </div>
+        <span class="tab-label">Impulsos</span>
+      </button>
+
+      <!-- 3. CARTEIRA (TELA MINIMALISTA DE SALDO + DEPÓSITO PIX/DÉBITO) -->
+      <button
+        type="button"
+        class="nav-tab-btn"
+        :class="{ active: activeTab === 'carteira' }"
+        @click="handleProviderTab('carteira')"
+      >
+        <div class="icon-wrap">
+          <ion-icon :icon="activeTab === 'carteira' ? wallet : walletOutline" class="tab-icon"></ion-icon>
+        </div>
+        <span class="tab-label">Carteira</span>
+      </button>
+
+      <!-- 4. PERFIL -->
+      <button
+        type="button"
+        class="nav-tab-btn"
+        :class="{ active: activeTab === 'perfil' }"
+        @click="handleProviderTab('perfil')"
+      >
+        <div class="icon-wrap">
+          <ion-icon :icon="activeTab === 'perfil' ? person : personOutline" class="tab-icon"></ion-icon>
+          <span class="notification-dot" title="Perfil do Prestador de Serviço"></span>
+        </div>
+        <span class="tab-label">Perfil</span>
+      </button>
+    </div>
+
+    <!-- MODO CLIENTE: INÍCIO, BUSCA, PEDIDOS E PERFIL -->
+    <div v-else class="bottom-nav-inner">
       <!-- 1. INÍCIO -->
       <button
         type="button"
@@ -51,7 +109,7 @@
       >
         <div class="icon-wrap">
           <ion-icon :icon="activeTab === 'profile' ? person : personOutline" class="tab-icon"></ion-icon>
-          <span class="notification-dot" title="Conta e Modo Trabalhador"></span>
+          <span class="notification-dot" title="Conta e Modo Prestador de Serviço"></span>
         </div>
         <span class="tab-label">Perfil</span>
       </button>
@@ -92,7 +150,11 @@
             <span class="order-cat-badge">{{ ord.categoria }}</span>
             <span
               class="order-status-pill"
-              :class="ord.status === 'COMPLETED' ? 'done' : 'ongoing'"
+              :class="{
+                done: ord.status === 'COMPLETED',
+                cancelled: ord.status === 'CANCELLED' || ord.status === 'REJECTED',
+                ongoing: ord.status !== 'COMPLETED' && ord.status !== 'CANCELLED' && ord.status !== 'REJECTED'
+              }"
             >
               {{ ord.statusLabel }}
             </span>
@@ -161,9 +223,9 @@
           </div>
           <div>
             <span class="profile-mode-pill">
-              {{ isProviderRoute ? 'MODO TRABALHADOR ATIVO' : 'MODO CLIENTE ATIVO' }}
+              {{ isProviderMode ? 'PRESTADOR DE SERVIÇO ATIVO' : 'MODO CLIENTE ATIVO' }}
             </span>
-            <h2 class="sheet-title">{{ isProviderRoute ? store.workerProfile.name : 'Você (Cliente +SERVE)' }}</h2>
+            <h2 class="sheet-title">{{ isProviderMode ? store.workerProfile.name : 'Você (Cliente +SERVE)' }}</h2>
             <p class="sheet-subtitle">Boa Vista - RR • Conta Verificada</p>
           </div>
         </div>
@@ -171,32 +233,32 @@
       </div>
 
       <div class="profile-menu-list">
-        <!-- Alternar entre Cliente e Trabalhador -->
+        <!-- Alternar entre Cliente e Prestador de Serviço -->
         <div class="profile-menu-item highlight-switch" @click="toggleAppMode">
           <div class="menu-item-icon neon">
             <ion-icon :icon="swapHorizontalOutline"></ion-icon>
           </div>
           <div class="menu-item-text">
-            <h4>{{ isProviderRoute ? 'Ir para Modo Cliente (Contratar)' : 'Ir para Modo Trabalhador (Prestador)' }}</h4>
-            <p>{{ isProviderRoute ? 'Busque e contrate profissionais para seu evento ou casa.' : `Veja ${store.jobLeads.length} chamados disponíveis e receba pagamentos.` }}</p>
+            <h4>{{ isProviderMode ? 'Ir para Modo Cliente (Contratar)' : 'Ir para Modo Prestador de Serviço' }}</h4>
+            <p>{{ isProviderMode ? 'Busque e contrate profissionais para seu evento ou casa.' : `Ative impulsos, veja ${store.jobLeads.length} chamados e receba via PIX.` }}</p>
           </div>
           <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
         </div>
 
-        <!-- Atalho para Carteira do Prestador (EXCLUSIVO DO MODO TRABALHADOR) -->
-        <div v-if="isProviderRoute" class="profile-menu-item" @click="goToProviderWallet">
+        <!-- Atalho para Carteira do Prestador (EXCLUSIVO DO PRESTADOR DE SERVIÇO) -->
+        <div v-if="isProviderMode" class="profile-menu-item" @click="goToProviderWallet">
           <div class="menu-item-icon">
             <ion-icon :icon="walletOutline"></ion-icon>
           </div>
           <div class="menu-item-text">
             <h4>Carteira & Saque PIX</h4>
-            <p>Saldo disponível do trabalhador: <strong>R$ {{ store.walletBalance }},00</strong></p>
+            <p>Saldo disponível do prestador de serviço: <strong>R$ {{ store.walletBalance }},00</strong></p>
           </div>
           <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
         </div>
 
         <!-- Atalho para Meus Pedidos (Modo Cliente) -->
-        <div v-if="!isProviderRoute" class="profile-menu-item" @click="switchToOrdersFromProfile">
+        <div v-if="!isProviderMode" class="profile-menu-item" @click="switchToOrdersFromProfile">
           <div class="menu-item-icon">
             <ion-icon :icon="receiptOutline"></ion-icon>
           </div>
@@ -245,7 +307,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { IonIcon, IonModal, IonContent, IonToast } from '@ionic/vue';
 import {
@@ -257,10 +319,15 @@ import {
   receiptOutline,
   person,
   personOutline,
+  briefcase,
+  briefcaseOutline,
+  rocket,
+  rocketOutline,
+  wallet,
+  walletOutline,
   checkmarkCircle,
   chatbubbleOutline,
   swapHorizontalOutline,
-  walletOutline,
   headsetOutline,
   refreshOutline,
   arrowForwardOutline
@@ -273,34 +340,81 @@ const store = useAppStore();
 
 const resetToastOpen = ref(false);
 
-const isProviderRoute = computed(() => route.path.startsWith('/provider'));
+// Mantém store.role estritamente alinhado à rota para nunca exibir ícones do prestador na Home
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath.startsWith('/provider')) {
+      store.role = 'PROVIDER';
+    } else {
+      store.role = 'CLIENT';
+    }
+  },
+  { immediate: true }
+);
+
+const isProviderMode = computed(() => {
+  return route.path.startsWith('/provider');
+});
 
 const ongoingOrdersCount = computed(() => {
   return store.ordersList.filter(o => o.status === 'IN_PROGRESS').length;
 });
 
+const providerActiveCount = computed(() => {
+  return store.acceptedJobs.filter(j => j.status !== 'COMPLETED').length + store.jobLeads.length;
+});
+
 const activeTab = computed(() => {
   if (store.ordersModalOpen) return 'orders';
-  if (store.profileMenuModalOpen) return 'profile';
+  if (store.boostModalOpen) return 'impulsos';
+  if (store.profileMenuModalOpen) return isProviderMode.value ? 'perfil' : 'profile';
+  if (isProviderMode.value) {
+    if (store.providerTab === 'carteira') return 'carteira';
+    if (store.providerTab === 'perfil') return 'perfil';
+    return 'servicos';
+  }
   if (route.path.startsWith('/client')) return 'search';
-  if (route.path.startsWith('/provider')) return 'profile';
   return 'home';
 });
 
 function closeAllGlobalModals() {
   store.ordersModalOpen = false;
   store.profileMenuModalOpen = false;
+  store.boostModalOpen = false;
+}
+
+async function handleProviderTab(tabName) {
+  closeAllGlobalModals();
+  store.role = 'PROVIDER';
+  store.providerTab = tabName;
+  if (!route.path.startsWith('/provider')) {
+    await router.push('/provider');
+  }
+}
+
+async function openProviderBoostModal() {
+  store.ordersModalOpen = false;
+  store.profileMenuModalOpen = false;
+  store.role = 'PROVIDER';
+  if (!route.path.startsWith('/provider')) {
+    store.providerTab = 'servicos';
+    await router.push('/provider');
+  }
+  store.boostModalOpen = true;
 }
 
 function handleTabClick(tab) {
   if (tab === 'home') {
     closeAllGlobalModals();
+    store.role = 'CLIENT';
     router.push('/home');
     return;
   }
 
   if (tab === 'search') {
     closeAllGlobalModals();
+    store.role = 'CLIENT';
     if (!route.path.startsWith('/client')) {
       router.push('/client/dashboard');
     } else {
@@ -324,6 +438,7 @@ function handleTabClick(tab) {
 
 function goToSearchFromOrders() {
   store.ordersModalOpen = false;
+  store.role = 'CLIENT';
   router.push('/client/dashboard');
 }
 
@@ -332,18 +447,23 @@ function openOrderChat(ord) {
   store.openChatWithPro(ord.professional, ord);
 }
 
-function toggleAppMode() {
+async function toggleAppMode() {
   store.profileMenuModalOpen = false;
-  if (isProviderRoute.value) {
-    router.push('/client/dashboard');
+  if (isProviderMode.value) {
+    store.role = 'CLIENT';
+    await router.push('/home');
   } else {
-    router.push('/provider/dashboard');
+    store.role = 'PROVIDER';
+    store.providerTab = 'servicos';
+    await router.push('/provider');
   }
 }
 
-function goToProviderWallet() {
+async function goToProviderWallet() {
   store.profileMenuModalOpen = false;
-  router.push('/provider/dashboard');
+  store.role = 'PROVIDER';
+  store.providerTab = 'carteira';
+  await router.push('/provider');
 }
 
 function switchToOrdersFromProfile() {
@@ -370,12 +490,14 @@ function handleResetPresentation() {
 </script>
 
 <style scoped>
-/* ================= BARRA INFERIOR FIXA (4 ABAS PRINCIPAIS) ================= */
+/* ================= BARRA INFERIOR FIXA (4 ABAS PRINCIPAIS - MOBILE APP) ================= */
 .global-bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
+  max-width: 430px;
+  margin: 0 auto;
   z-index: 1000;
   background: rgba(7, 10, 16, 0.96);
   backdrop-filter: blur(18px);
@@ -383,12 +505,16 @@ function handleResetPresentation() {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.55);
+  transition: border-color 0.2s ease;
+}
+
+.global-bottom-nav.provider-mode-nav {
+  border-top: 1px solid rgba(212, 255, 36, 0.35);
 }
 
 .bottom-nav-inner {
-  max-width: 520px;
-  margin: 0 auto;
-  height: 62px;
+  width: 100%;
+  height: 64px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   align-items: center;
@@ -597,6 +723,11 @@ function handleResetPresentation() {
 .order-status-pill.done {
   background: rgba(34, 197, 94, 0.16);
   color: #4ade80;
+}
+
+.order-status-pill.cancelled {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
 }
 
 .order-title {

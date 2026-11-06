@@ -6,13 +6,15 @@ export const CATEGORY_CONFIGS = {
   Garçom: {
     id: 'cat-garcom',
     name: 'Garçom',
+    group: 'Eventos',
     label: 'Garçom & Eventos',
     noun: 'garçom',
     plural: 'Garçons',
     headlineSuffix: 'para o seu evento',
     subtitle: 'Contrate garçons experientes, bartenders e mestres de salão com confirmação rápida.',
     desc: 'Garçons, bartenders e apoio de salão para festas e eventos.',
-    icon: 'wine',
+    icon: 'restaurant',
+    photoUrl: 'https://images.unsplash.com/photo-1574096079513-d8259312b785?auto=format&fit=crop&w=600&q=80',
     defaultPrice: 200,
     defaultStart: '18:00',
     defaultEnd: '00:00',
@@ -26,9 +28,60 @@ export const CATEGORY_CONFIGS = {
     detailsPlaceholder: 'Ex: Servir bebidas e salgados para 50 convidados, traje social preto',
     prices: [150, 200, 250, 320]
   },
+  Bartender: {
+    id: 'cat-bartender',
+    name: 'Bartender',
+    group: 'Eventos',
+    label: 'Bartender & Drinks',
+    noun: 'bartender',
+    plural: 'Bartenders',
+    headlineSuffix: 'para o bar do seu evento',
+    subtitle: 'Coquetelaria clássica e autoral para festas, casamentos e confraternizações.',
+    desc: 'Preparo de drinks clássicos, caipirinhas e coquetéis autorais.',
+    icon: 'wine',
+    photoUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80',
+    defaultPrice: 240,
+    defaultStart: '19:00',
+    defaultEnd: '01:00',
+    serviceTypeLabel: 'Formato do bar',
+    serviceTypes: ['Festa / Aniversário', 'Casamento', 'Open Bar Corporativo', 'Drinks & Caipirinhas'],
+    scopeLabel: 'Quantidade de bartenders',
+    scopes: ['1 bartender', '2 bartenders', 'Equipe de bar'],
+    locationLabel: 'Local do evento',
+    locationPlaceholder: 'Ex: Salão de Festas Reserva • Paraviana',
+    detailsLabel: 'Breve descrição do cardápio de drinks',
+    detailsPlaceholder: 'Ex: Preparo de Gin Tônica, Moscow Mule e Caipirinhas para 40 pessoas',
+    prices: [180, 240, 300, 380]
+  },
+  Churrasqueiro: {
+    id: 'cat-churrasqueiro',
+    name: 'Churrasqueiro',
+    group: 'Eventos',
+    label: 'Churrasqueiro',
+    noun: 'churrasqueiro',
+    plural: 'Churrasqueiros',
+    headlineSuffix: 'para o seu churrasco',
+    subtitle: 'Mestres churrasqueiros para comandar a grelha com ponto perfeito e organização.',
+    desc: 'Cortes nobres, churrasco tradicional, acompanhamentos e serviço na tábua.',
+    icon: 'flame',
+    photoUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+    defaultPrice: 220,
+    defaultStart: '11:00',
+    defaultEnd: '17:00',
+    serviceTypeLabel: 'Estilo do churrasco',
+    serviceTypes: ['Churrasco em Família', 'Confraternização', 'Aniversário', 'Parrilla / Cortes Nobres'],
+    scopeLabel: 'Número de convidados',
+    scopes: ['Até 25 pessoas', '25 a 50 pessoas', 'Mais de 50 pessoas'],
+    locationLabel: 'Local do churrasco',
+    locationPlaceholder: 'Ex: Área Gourmet • Bairro São Francisco',
+    detailsLabel: 'Breve descrição do churrasco',
+    detailsPlaceholder: 'Ex: Assar carnes bovinas, linguiça e pão de alho, fatiar e servir na tábua',
+    prices: [170, 220, 280, 350]
+  },
   Eletricista: {
     id: 'cat-eletricista',
     name: 'Eletricista',
+    group: 'Casa',
     label: 'Eletricista',
     noun: 'eletricista',
     plural: 'Eletricistas',
@@ -36,6 +89,7 @@ export const CATEGORY_CONFIGS = {
     subtitle: 'Solucione curtos, instalações de disjuntores, chuveiros e iluminação com rapidez.',
     desc: 'Instalação de tomadas, chuveiros, disjuntores e luminárias.',
     icon: 'flash',
+    photoUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80',
     defaultPrice: 150,
     defaultStart: '09:00',
     defaultEnd: '12:00',
@@ -49,32 +103,10 @@ export const CATEGORY_CONFIGS = {
     detailsPlaceholder: 'Ex: Disjuntor do chuveiro 220V desarmando após 5 minutos ligado',
     prices: [100, 150, 200, 280]
   },
-  Diarista: {
-    id: 'cat-diarista',
-    name: 'Diarista',
-    label: 'Diarista & Faxina',
-    noun: 'diarista',
-    plural: 'Diaristas',
-    headlineSuffix: 'para deixar tudo impecável',
-    subtitle: 'Profissionais de limpeza residencial e comercial com referências verificadas.',
-    desc: 'Faxina completa, limpeza pós-obra e organização residencial.',
-    icon: 'sparkles',
-    defaultPrice: 160,
-    defaultStart: '08:00',
-    defaultEnd: '16:00',
-    serviceTypeLabel: 'Tipo de limpeza',
-    serviceTypes: ['Faxina Completa', 'Limpeza Leve', 'Pós-Obra', 'Passar Roupa'],
-    scopeLabel: 'Tamanho do imóvel',
-    scopes: ['1 a 2 quartos', '3 quartos', 'Casa grande / Empresa'],
-    locationLabel: 'Endereço do imóvel',
-    locationPlaceholder: 'Ex: Condomínio Parque das Águas • Paraviana',
-    detailsLabel: 'Breve descrição da limpeza',
-    detailsPlaceholder: 'Ex: Limpeza detalhada de cozinha, 2 banheiros e vidros da varanda',
-    prices: [130, 160, 200, 240]
-  },
   Encanador: {
     id: 'cat-encanador',
     name: 'Encanador',
+    group: 'Casa',
     label: 'Encanador',
     noun: 'encanador',
     plural: 'Encanadores',
@@ -82,6 +114,7 @@ export const CATEGORY_CONFIGS = {
     subtitle: 'Desentupimentos, reparos de vazamentos em pias, registros e caixas d’água.',
     desc: 'Detecção de vazamentos, desentupimento e troca de torneiras.',
     icon: 'water',
+    photoUrl: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=600&q=80',
     defaultPrice: 140,
     defaultStart: '14:00',
     defaultEnd: '17:00',
@@ -98,6 +131,7 @@ export const CATEGORY_CONFIGS = {
   Reformas: {
     id: 'cat-reformas',
     name: 'Reformas',
+    group: 'Casa',
     label: 'Consertos & Reparos',
     noun: 'profissional',
     plural: 'Profissionais',
@@ -105,6 +139,7 @@ export const CATEGORY_CONFIGS = {
     subtitle: 'Instalação de suportes de TV, montagem de móveis, pintura e marido de aluguel.',
     desc: 'Suporte de TV, montagem de móveis, pintura e pequenos reparos.',
     icon: 'construct',
+    photoUrl: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=600&q=80',
     defaultPrice: 130,
     defaultStart: '09:00',
     defaultEnd: '13:00',
@@ -117,11 +152,113 @@ export const CATEGORY_CONFIGS = {
     detailsLabel: 'Breve descrição do serviço',
     detailsPlaceholder: 'Ex: Instalar suporte articulado de TV 55" em parede de alvenaria',
     prices: [100, 130, 170, 220]
+  },
+  Diarista: {
+    id: 'cat-diarista',
+    name: 'Diarista',
+    group: 'Limpeza',
+    label: 'Diarista & Faxina',
+    noun: 'diarista',
+    plural: 'Diaristas',
+    headlineSuffix: 'para deixar tudo impecável',
+    subtitle: 'Profissionais de limpeza residencial e comercial com referências verificadas.',
+    desc: 'Faxina completa, limpeza pós-obra e organização residencial.',
+    icon: 'sparkles',
+    photoUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80',
+    defaultPrice: 160,
+    defaultStart: '08:00',
+    defaultEnd: '16:00',
+    serviceTypeLabel: 'Tipo de limpeza',
+    serviceTypes: ['Faxina Completa', 'Limpeza Leve', 'Organização de Armários', 'Limpeza de Vidros'],
+    scopeLabel: 'Tamanho do imóvel',
+    scopes: ['1 a 2 quartos', '3 quartos', 'Casa grande / Empresa'],
+    locationLabel: 'Endereço do imóvel',
+    locationPlaceholder: 'Ex: Condomínio Parque das Águas • Paraviana',
+    detailsLabel: 'Breve descrição da limpeza',
+    detailsPlaceholder: 'Ex: Limpeza detalhada de cozinha, 2 banheiros e vidros da varanda',
+    prices: [130, 160, 200, 240]
+  },
+  'Pós-Obra': {
+    id: 'cat-pos-obra',
+    name: 'Pós-Obra',
+    group: 'Limpeza',
+    label: 'Limpeza Pós-Obra',
+    noun: 'especialista pós-obra',
+    plural: 'Profissionais Pós-Obra',
+    headlineSuffix: 'para limpeza pesada pós-obra',
+    subtitle: 'Remoção técnica de respingos de tinta, gesso, cimento e poeira fina de reforma.',
+    desc: 'Limpeza pesada pós-reforma ou mudança residencial e comercial.',
+    icon: 'home',
+    photoUrl: 'https://images.unsplash.com/photo-1527515637462-bg52b55f8b53?auto=format&fit=crop&w=600&q=80',
+    defaultPrice: 220,
+    defaultStart: '08:00',
+    defaultEnd: '17:00',
+    serviceTypeLabel: 'Tipo de limpeza pesada',
+    serviceTypes: ['Pós-Reforma Residencial', 'Pré-Mudança', 'Comercial / Sala', 'Limpeza de Piso e Vidros'],
+    scopeLabel: 'Porte do ambiente',
+    scopes: ['Apartamento compacto', 'Casa / 3 quartos', 'Imóvel amplo (2 profissionais)'],
+    locationLabel: 'Endereço da obra / imóvel',
+    locationPlaceholder: 'Ex: Edifício Mirante • Bairro São Francisco',
+    detailsLabel: 'Breve descrição do estado do local',
+    detailsPlaceholder: 'Ex: Retirar pó de gesso e respingos de tinta acrílica em sala e 2 quartos',
+    prices: [180, 220, 280, 360]
+  },
+  Passadeira: {
+    id: 'cat-passadeira',
+    name: 'Passadeira',
+    group: 'Limpeza',
+    label: 'Passadeira de Roupas',
+    noun: 'passadeira',
+    plural: 'Passadeiras',
+    headlineSuffix: 'para cuidar das suas roupas',
+    subtitle: 'Camisas sociais, roupas delicadas e peças do dia a dia passadas e organizadas.',
+    desc: 'Passadoria de camisas sociais, ternos, roupas de cama e peças delicadas.',
+    icon: 'shirt',
+    photoUrl: 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?auto=format&fit=crop&w=600&q=80',
+    defaultPrice: 140,
+    defaultStart: '09:00',
+    defaultEnd: '14:00',
+    serviceTypeLabel: 'Tipo de peças',
+    serviceTypes: ['Camisas Sociais & Calças', 'Roupas do Dia a Dia', 'Roupas de Cama & Mesa', 'Pacote Completo'],
+    scopeLabel: 'Volume estimado',
+    scopes: ['Até 25 peças', '25 a 45 peças', 'Acima de 45 peças'],
+    locationLabel: 'Endereço do atendimento',
+    locationPlaceholder: 'Ex: Rua Levindo Inácio, 110 • Caçari',
+    detailsLabel: 'Breve descrição das roupas',
+    detailsPlaceholder: 'Ex: 15 camisas sociais masculinas e roupas da semana da família',
+    prices: [110, 140, 180, 220]
   }
 };
 
+// Agrupamento hierárquico para o seletor UX (Eventos em primeira opção | Casa | Limpeza)
+export const PROFESSION_GROUPS = [
+  {
+    id: 'Eventos',
+    label: 'Eventos',
+    items: ['Garçom', 'Bartender', 'Churrasqueiro']
+  },
+  {
+    id: 'Casa',
+    label: 'Casa',
+    items: ['Eletricista', 'Encanador', 'Reformas']
+  },
+  {
+    id: 'Limpeza',
+    label: 'Limpeza',
+    items: ['Diarista', 'Pós-Obra', 'Passadeira']
+  }
+];
+
 export const useAppStore = defineStore('app', () => {
   const role = ref('CLIENT'); // 'CLIENT' | 'PROVIDER'
+  const providerTab = ref('servicos'); // 'servicos' | 'carteira' | 'perfil'
+  const boostModalOpen = ref(false);
+  const activeBoost = ref({
+    id: 'b-2',
+    name: 'Impulso Turbo Pro',
+    multiplier: '3.8x',
+    duration: '7 dias'
+  });
   const chatModalOpen = ref(false);
   const ratingModalOpen = ref(false);
   const ordersModalOpen = ref(false);
@@ -132,7 +269,13 @@ export const useAppStore = defineStore('app', () => {
   const selectedProfessional = ref(null);
   const selectedCategory = ref('Garçom');
 
-  const categoriesList = ref(Object.values(CATEGORY_CONFIGS));
+  const categoriesList = ref([
+    CATEGORY_CONFIGS.Garçom,
+    CATEGORY_CONFIGS.Eletricista,
+    CATEGORY_CONFIGS.Diarista,
+    CATEGORY_CONFIGS.Encanador,
+    CATEGORY_CONFIGS.Reformas
+  ]);
 
   // Formulário dinâmico do cliente
   const eventForm = ref({
@@ -379,6 +522,101 @@ export const useAppStore = defineStore('app', () => {
       reviews: [
         { author: 'Diego S.', rating: 5, comment: 'Trocou a válvula rapidamente e sem sujeira.' }
       ]
+    },
+    {
+      id: 16,
+      nome: 'Henrique Bastos',
+      categoria: 'Bartender',
+      especialidade: 'Coquetelaria Clássica & Drinks Autorais',
+      bio: 'Bartender profissional com kit completo de bar, especialista em casamentos e eventos.',
+      nota: '5,0',
+      servicos: 58,
+      exp: '6 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 240,
+      tags: ['Bartender', 'Drinks', 'Eventos'],
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=350&q=80',
+      badges: ['Mixologista', 'Kit Próprio'],
+      reviews: [
+        { author: 'Renata S.', rating: 5, comment: 'Drinks maravilhosos e apresentação impecável!' }
+      ]
+    },
+    {
+      id: 17,
+      nome: 'Gustavo Nogueira',
+      categoria: 'Churrasqueiro',
+      especialidade: 'Mestre Churrasqueiro & Cortes Nobres',
+      bio: 'Domínio de grelha, espeto e parrilla. Ponto perfeito, organização e limpeza da churrasqueira.',
+      nota: '4,9',
+      servicos: 49,
+      exp: '8 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 220,
+      tags: ['Churrasqueiro', 'Cortes Nobres', 'Festas'],
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=350&q=80',
+      badges: ['Mestre da Brasa', 'Super Pontual'],
+      reviews: [
+        { author: 'Fábio T.', rating: 5, comment: 'Carne no ponto exato a festa inteira!' }
+      ]
+    },
+    {
+      id: 18,
+      nome: 'Cláudia Rocha',
+      categoria: 'Pós-Obra',
+      especialidade: 'Limpeza Técnica Pós-Reforma e Mudança',
+      bio: 'Especialista em remoção de respingos de tinta, rejunte, gesso e higienização pesada.',
+      nota: '4,9',
+      servicos: 44,
+      exp: '6 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 220,
+      tags: ['Pós-Obra', 'Limpeza Pesada', 'Vidros'],
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=350&q=80',
+      badges: ['Limpeza Técnica', 'Equipamento Próprio'],
+      reviews: [
+        { author: 'Marcelo A.', rating: 5, comment: 'Tirou toda a poeira fina da obra, ficou pronto para mudar.' }
+      ]
+    },
+    {
+      id: 19,
+      nome: 'Helena Martins',
+      categoria: 'Passadeira',
+      especialidade: 'Passadoria de Camisas Sociais e Roupas Finas',
+      bio: 'Cuidado especial com linho, algodão egípcio, ternos e organização de cabides.',
+      nota: '5,0',
+      servicos: 67,
+      exp: '9 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 140,
+      tags: ['Passadeira', 'Camisas Sociais', 'Organização'],
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=350&q=80',
+      badges: ['Roupas Delicadas', 'Nota Máxima'],
+      reviews: [
+        { author: 'Beatriz L.', rating: 5, comment: 'Camisas perfeitamente passadas e dobradas.' }
+      ]
+    },
+    {
+      id: 20,
+      nome: 'Felipe Ramos',
+      categoria: 'Reformas',
+      especialidade: 'Suportes de TV, Montagem e Reparos Gerais',
+      bio: 'Marido de aluguel completo com furadeira industrial, nível a laser e ferramentas próprias.',
+      nota: '4,9',
+      servicos: 61,
+      exp: '6 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 130,
+      tags: ['Reformas', 'Suporte TV', 'Reparos'],
+      avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=350&q=80',
+      badges: ['Ferramental Completo', 'Pontual'],
+      reviews: [
+        { author: 'Patrícia M.', rating: 5, comment: 'Instalou os suportes e prateleiras com perfeição.' }
+      ]
     }
   ]);
 
@@ -575,6 +813,9 @@ export const useAppStore = defineStore('app', () => {
       location: orderContext?.location || eventForm.value.descricao || 'Boa Vista - RR',
       budget: orderContext?.budget || normalized.valorBase || eventForm.value.valorOferecido,
       status: orderContext?.status || 'IN_PROGRESS',
+      providerAccepted: orderContext?.providerAccepted ?? false,
+      clientAccepted: orderContext?.clientAccepted ?? true, // Cliente que contrata já inicia aceitando a proposta
+      serviceCompleted: orderContext?.status === 'COMPLETED',
       professional: normalized,
       selectedOffer: {
         professional: normalized
@@ -613,7 +854,10 @@ export const useAppStore = defineStore('app', () => {
       budget: priceVal,
       price: priceVal,
       status: 'IN_PROGRESS',
-      statusLabel: 'Profissional Confirmado',
+      statusLabel: 'Aguardando Atendimento',
+      providerAccepted: false,
+      clientAccepted: true,
+      serviceCompleted: false,
       rated: false,
       professional: pro
     };
@@ -641,13 +885,43 @@ export const useAppStore = defineStore('app', () => {
       scope: escopo,
       location: locText,
       description: descText,
+      providerAccepted: false,
+      clientAccepted: true,
       photoUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80'
     });
 
     return newOrd;
   }
 
-  // Concluir pedido pelo Cliente (com nota e avaliação)
+  // Confirmação pelo Prestador no Chat: "Aceito o serviço"
+  function setProviderAccepted(orderId) {
+    if (activeRequest.value) {
+      activeRequest.value.providerAccepted = true;
+    }
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (ord) {
+      ord.providerAccepted = true;
+      ord.statusLabel = 'Serviço Aceito por Ambos';
+    }
+    const job = acceptedJobs.value.find(j => j.id === orderId || j.orderId === orderId);
+    if (job) {
+      job.providerAccepted = true;
+    }
+  }
+
+  // Confirmação pelo Contratante no Chat: "Aceito a proposta"
+  function setClientAccepted(orderId) {
+    if (activeRequest.value) {
+      activeRequest.value.clientAccepted = true;
+    }
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (ord) {
+      ord.clientAccepted = true;
+    }
+  }
+
+  // Concluir pedido pelo Cliente: O Contratante confirma que o "Serviço foi feito"
+  // Debita a comissão da plataforma (10%) do Saldo do prestador (Modelo inDrive)
   function completeRequest(orderId, ratingStars = 5, comment = '') {
     const ord = ordersList.value.find(o => o.id === orderId) || activeRequest.value;
     if (ord) {
@@ -655,6 +929,7 @@ export const useAppStore = defineStore('app', () => {
       ord.statusLabel = 'Concluído';
       ord.rated = true;
       ord.userRating = ratingStars;
+      ord.serviceCompleted = true;
 
       const targetOrder = ordersList.value.find(o => o.id === ord.id);
       if (targetOrder) {
@@ -662,7 +937,28 @@ export const useAppStore = defineStore('app', () => {
         targetOrder.statusLabel = 'Concluído';
         targetOrder.rated = true;
         targetOrder.userRating = ratingStars;
+        targetOrder.serviceCompleted = true;
       }
+
+      // Cálculo da Taxa da Plataforma (10% sobre o valor do serviço)
+      const serviceVal = Number(ord.budget || ord.price) || 150;
+      const fee = Math.round(serviceVal * 0.10);
+
+      // Debita a taxa do Saldo do prestador
+      walletBalance.value = Math.max(0, walletBalance.value - fee);
+      workerProfile.value.completedJobs += 1;
+      workerProfile.value.xp = Math.min(workerProfile.value.nextLevelXp, workerProfile.value.xp + 250);
+
+      transactions.value.unshift({
+        id: `tx-fee-${Date.now()}`,
+        type: 'DEBIT',
+        title: `Taxa de serviço da plataforma (10% de R$ ${serviceVal})`,
+        amount: -fee,
+        date: 'Agora mesmo'
+      });
+
+      // Remove dos serviços em andamento do prestador
+      acceptedJobs.value = acceptedJobs.value.filter(j => j.id !== orderId && j.orderId !== orderId);
 
       // Adiciona a avaliação ao perfil do profissional se houver comentário
       const proId = ord.professional?.id;
@@ -684,18 +980,135 @@ export const useAppStore = defineStore('app', () => {
     ratingModalOpen.value = false;
   }
 
-  function cancelOrder(orderId) {
-    ordersList.value = ordersList.value.filter(o => o.id !== orderId);
+  // Cancelar pedido pelo Cliente ou Prestador
+  function cancelOrder(orderId, reason = 'Cancelado pelo usuário') {
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (ord) {
+      ord.status = 'CANCELLED';
+      ord.statusLabel = 'Cancelado';
+      ord.cancelReason = reason;
+    }
     if (activeRequest.value?.id === orderId) {
-      activeRequest.value = null;
+      activeRequest.value.status = 'CANCELLED';
+      activeRequest.value.statusLabel = 'Cancelado';
+      activeRequest.value.cancelReason = reason;
+    }
+    acceptedJobs.value = acceptedJobs.value.filter(j => j.id !== orderId && j.orderId !== orderId);
+    jobLeads.value = jobLeads.value.filter(j => j.id !== orderId && j.orderId !== orderId);
+  }
+
+  // Recusar / Negar proposta pelo Prestador (através da lista ou do chat)
+  function rejectJobLead(jobId, reason = 'Recusado pelo prestador') {
+    jobLeads.value = jobLeads.value.filter(j => j.id !== jobId && j.orderId !== jobId);
+    acceptedJobs.value = acceptedJobs.value.filter(j => j.id !== jobId && j.orderId !== jobId);
+    const ord = ordersList.value.find(o => o.id === jobId || o.id === `ord-${jobId}`);
+    if (ord) {
+      ord.status = 'REJECTED';
+      ord.statusLabel = 'Proposta Recusada';
+      ord.cancelReason = reason;
+    }
+    if (activeRequest.value?.id === jobId || activeRequest.value?.orderId === jobId) {
+      activeRequest.value.status = 'REJECTED';
+      activeRequest.value.statusLabel = 'Proposta Recusada';
+      activeRequest.value.cancelReason = reason;
     }
   }
 
-  // Aceitar serviço pelo Trabalhador
+  // Fazer Contraproposta pelo Prestador (altera valor e envia status pendente de aprovação do cliente)
+  function submitCounterOffer(orderId, newAmount, note = '') {
+    const val = Number(newAmount) || 0;
+    if (val <= 0) return false;
+
+    if (activeRequest.value) {
+      activeRequest.value.counterOffer = {
+        amount: val,
+        note: note || 'Novo valor proposto pelo prestador',
+        status: 'PENDING'
+      };
+      activeRequest.value.providerAccepted = true;
+      activeRequest.value.clientAccepted = false; // Cliente precisa aceitar o novo valor
+      activeRequest.value.statusLabel = `Contraproposta: R$ ${val}`;
+    }
+
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (ord) {
+      ord.counterOffer = {
+        amount: val,
+        note: note || 'Novo valor proposto pelo prestador',
+        status: 'PENDING'
+      };
+      ord.providerAccepted = true;
+      ord.clientAccepted = false;
+      ord.statusLabel = `Contraproposta: R$ ${val}`;
+    }
+
+    const job = jobLeads.value.find(j => j.id === orderId || j.orderId === orderId);
+    if (job) {
+      job.counterOffer = { amount: val, note };
+      job.budget = val;
+    }
+
+    const accepted = acceptedJobs.value.find(j => j.id === orderId || j.orderId === orderId);
+    if (accepted) {
+      accepted.counterOffer = { amount: val, note };
+      accepted.budget = val;
+    }
+
+    return true;
+  }
+
+  // Cliente aceita a contraproposta do prestador
+  function acceptCounterOffer(orderId) {
+    if (activeRequest.value && activeRequest.value.counterOffer) {
+      activeRequest.value.budget = activeRequest.value.counterOffer.amount;
+      activeRequest.value.counterOffer.status = 'ACCEPTED';
+      activeRequest.value.clientAccepted = true;
+      activeRequest.value.providerAccepted = true;
+      activeRequest.value.statusLabel = 'Acordo Fechado';
+    }
+
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (ord && ord.counterOffer) {
+      ord.budget = ord.counterOffer.amount;
+      ord.price = ord.counterOffer.amount;
+      ord.counterOffer.status = 'ACCEPTED';
+      ord.clientAccepted = true;
+      ord.providerAccepted = true;
+      ord.statusLabel = 'Acordo Fechado';
+    }
+
+    const job = acceptedJobs.value.find(j => j.id === orderId || j.orderId === orderId);
+    if (job && job.counterOffer) {
+      job.budget = job.counterOffer.amount;
+      job.counterOffer.status = 'ACCEPTED';
+    }
+    return true;
+  }
+
+  // Cliente recusa a contraproposta do prestador
+  function declineCounterOffer(orderId) {
+    if (activeRequest.value && activeRequest.value.counterOffer) {
+      activeRequest.value.counterOffer.status = 'DECLINED';
+      activeRequest.value.clientAccepted = false;
+      activeRequest.value.statusLabel = 'Contraproposta Recusada';
+    }
+
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (ord && ord.counterOffer) {
+      ord.counterOffer.status = 'DECLINED';
+      ord.clientAccepted = false;
+      ord.statusLabel = 'Contraproposta Recusada';
+    }
+    return true;
+  }
+
+  // Aceitar serviço pelo Prestador (através da lista de oportunidades)
   function acceptJobLead(job) {
     const activeJob = {
       ...job,
       acceptedAt: 'Agora mesmo',
+      providerAccepted: true,
+      clientAccepted: true,
       status: 'ACCEPTED'
     };
     acceptedJobs.value.unshift(activeJob);
@@ -703,67 +1116,68 @@ export const useAppStore = defineStore('app', () => {
     return activeJob;
   }
 
-  // Finalizar serviço pelo Trabalhador e receber pagamento na carteira
+  // Concluir serviço pelo Prestador (sinaliza que foi realizado)
   function completeWorkerJob(jobId) {
     const idx = acceptedJobs.value.findIndex(j => j.id === jobId);
     if (idx === -1) return null;
 
     const job = acceptedJobs.value[idx];
-    const fee = Math.round(job.budget * 0.05);
-    const netAmount = job.budget - fee;
+    const fee = Math.round(job.budget * 0.10);
 
-    walletBalance.value += netAmount;
+    // Debita a taxa de 10% da plataforma do Saldo do prestador (Modelo inDrive)
+    walletBalance.value = Math.max(0, walletBalance.value - fee);
     workerProfile.value.completedJobs += 1;
     workerProfile.value.xp = Math.min(workerProfile.value.nextLevelXp, workerProfile.value.xp + 250);
 
-    transactions.value.unshift(
-      {
-        id: `tx-earn-${Date.now()}`,
-        type: 'EARNING',
-        title: `Serviço Concluído: ${job.title}`,
-        amount: job.budget,
-        date: 'Agora mesmo'
-      },
-      {
-        id: `tx-fee-${Date.now() + 1}`,
-        type: 'DEBIT',
-        title: `Taxa da plataforma (5%)`,
-        amount: -fee,
-        date: 'Agora mesmo'
-      }
-    );
-
-    acceptedJobs.value.splice(idx, 1);
-    return { job, netAmount, fee };
-  }
-
-  function withdrawPix(amount, pixKey) {
-    const val = Number(amount) || 0;
-    if (val <= 0 || val > walletBalance.value) return false;
-    walletBalance.value -= val;
-    if (pixKey) workerProfile.value.pixKey = pixKey;
     transactions.value.unshift({
-      id: `tx-pix-${Date.now()}`,
+      id: `tx-fee-${Date.now()}`,
       type: 'DEBIT',
-      title: `Saque PIX enviado (${workerProfile.value.pixKey})`,
-      amount: -val,
+      title: `Taxa da plataforma (10% de R$ ${job.budget})`,
+      amount: -fee,
       date: 'Agora mesmo'
     });
-    return true;
+
+    acceptedJobs.value.splice(idx, 1);
+    return { job, fee };
   }
 
-  function rechargeWallet(amount) {
+  // Sem saque: apenas recarga de Saldo (como inDrive)
+  function rechargeWallet(amount, method = 'PIX') {
     const val = Number(amount) || 0;
     if (val <= 0) return false;
     walletBalance.value += val;
+    const methodLabel = method === 'DEBITO' ? 'Depósito de Saldo via Débito' : 'Depósito de Saldo via PIX';
     transactions.value.unshift({
       id: `tx-rec-${Date.now()}`,
       type: 'RECHARGE',
-      title: 'Recarga via PIX',
+      title: methodLabel,
       amount: val,
       date: 'Agora mesmo'
     });
     return true;
+  }
+
+  function activateBoostPlan(plan) {
+    if (!plan) return { ok: false, reason: 'INVALID' };
+    const cost = Number(plan.price) || 0;
+    if (walletBalance.value < cost) {
+      return { ok: false, reason: 'INSUFFICIENT_FUNDS' };
+    }
+    walletBalance.value -= cost;
+    activeBoost.value = {
+      id: plan.id,
+      name: plan.name,
+      multiplier: plan.multiplier,
+      duration: plan.duration
+    };
+    transactions.value.unshift({
+      id: `tx-boost-${Date.now()}`,
+      type: 'DEBIT',
+      title: `Ativação: ${plan.name} (${plan.duration})`,
+      amount: -cost,
+      date: 'Agora mesmo'
+    });
+    return { ok: true };
   }
 
   function skipJobLead(jobId) {
@@ -801,10 +1215,21 @@ export const useAppStore = defineStore('app', () => {
     ordersModalOpen.value = false;
     profileMenuModalOpen.value = false;
     proDetailModalOpen.value = false;
+    boostModalOpen.value = false;
+    activeBoost.value = {
+      id: 'b-2',
+      name: 'Impulso Turbo Pro',
+      multiplier: '3.8x',
+      duration: '7 dias'
+    };
+    providerTab.value = 'servicos';
   }
 
   return {
     role,
+    providerTab,
+    boostModalOpen,
+    activeBoost,
     chatModalOpen,
     ratingModalOpen,
     ordersModalOpen,
@@ -831,11 +1256,17 @@ export const useAppStore = defineStore('app', () => {
     createNewOrder,
     completeRequest,
     cancelOrder,
+    rejectJobLead,
+    submitCounterOffer,
+    acceptCounterOffer,
+    declineCounterOffer,
     acceptJobLead,
     skipJobLead,
     completeWorkerJob,
-    withdrawPix,
     rechargeWallet,
+    setProviderAccepted,
+    setClientAccepted,
+    activateBoostPlan,
     resetJobLeads,
     resetPresentation
   };

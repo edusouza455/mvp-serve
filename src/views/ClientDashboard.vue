@@ -1,38 +1,27 @@
 <template>
   <ion-page class="client-dashboard-page">
-    <!-- Header Minimalista (+ SERVE) -->
+    <!-- Header Mobile App (+ SERVE) -->
     <ion-header class="ion-no-border main-header">
       <ion-toolbar class="header-toolbar">
         <div class="header-inner">
-          <div class="brand-logo" @click="goToHome">
-            <span class="neon-plus">+</span>
-            <span class="brand-name">SERVE</span>
+          <div class="header-left-group">
+            <button type="button" class="back-home-btn" @click="goToHome" aria-label="Voltar para Início">
+              <ion-icon :icon="chevronBackOutline"></ion-icon>
+            </button>
+            <div class="brand-logo" @click="goToHome">
+              <span class="neon-plus">+</span>
+              <span class="brand-name">SERVE</span>
+            </div>
+            <span class="active-cat-header-pill">{{ selectedCategoryName }}</span>
           </div>
 
-          <!-- Links de Navegação no Desktop -->
-          <nav class="desktop-nav ion-hide-md-down">
-            <a href="/home" class="nav-item" @click.prevent="goToHome">
-              <ion-icon :icon="homeOutline"></ion-icon>
-              <span>Início</span>
-            </a>
-            <a href="#" class="nav-item" @click.prevent="openOrdersModal">
+          <div class="mobile-nav-actions">
+            <button type="button" class="mobile-orders-pill" @click="openOrdersModal">
               <ion-icon :icon="clipboardOutline"></ion-icon>
-              <span>Meus pedidos</span>
+              <span>Pedidos</span>
               <span class="orders-count-dot">{{ store.ordersList.length }}</span>
-            </a>
-            <a href="#" class="nav-item icon-only" title="Mensagens" @click.prevent="openChatModalDirect">
-              <ion-icon :icon="chatbubbleOutline"></ion-icon>
-            </a>
-            <a href="#" class="nav-item profile-dropdown" @click.prevent="openProfileMenuModal">
-              <ion-icon :icon="personCircleOutline" class="profile-icon"></ion-icon>
-              <span>Entrar / Perfil</span>
-              <ion-icon :icon="chevronDownOutline" class="dropdown-chevron"></ion-icon>
-            </a>
-          </nav>
-
-          <!-- Ação Rápida de Chat no Mobile -->
-          <div class="mobile-nav-actions ion-hide-md-up">
-            <button class="mobile-icon-btn" aria-label="Mensagens" title="Abrir Chat" @click="openChatModalDirect">
+            </button>
+            <button type="button" class="mobile-icon-btn" aria-label="Mensagens" title="Abrir Chat" @click="openChatModalDirect">
               <ion-icon :icon="chatbubbleOutline"></ion-icon>
             </button>
           </div>
@@ -43,411 +32,365 @@
     <ion-content :fullscreen="true" class="dashboard-content">
       <div class="page-wrapper">
 
-        <!-- GRID PRINCIPAL PADRÃO (7x5 no Desktop | Empilhado Fluido no Mobile) -->
-        <ion-grid class="ion-no-padding main-grid">
-          <ion-row class="hero-form-row">
-            
-            <!-- COLUNA ESQUERDA: TÍTULO DINÂMICO + FORMULÁRIO PRECISO (Mobile: 100% | Desktop: 7/12) -->
-            <ion-col size="12" size-lg="7" class="left-col">
-              
-              <!-- Título & Subtítulo com Seletor Contextual Integrado -->
-              <div class="hero-header-box">
-                <h1 class="hero-headline">
-                  Encontre o <span class="neon-highlight">{{ activeConfig.noun }} ideal</span> {{ activeConfig.headlineSuffix }}.
-                </h1>
-                <p class="hero-subtext">
-                  {{ activeConfig.subtitle }}
-                </p>
+        <!-- CARD DO FORMULÁRIO MOBILE (+SERVE) -->
+        <div id="form-event-card" class="form-card-container">
+          
+          <!-- BANNER QUANDO HÁ UM PROFISSIONAL SELECIONADO -->
+          <div v-if="store.selectedProfessional" class="selected-pro-card-banner">
+            <div class="selected-pro-left">
+              <img :src="store.selectedProfessional.avatar" :alt="store.selectedProfessional.nome" class="selected-pro-img" />
+              <div class="selected-pro-meta">
+                <span class="selected-headline-tag">CONTRATAÇÃO DIRETA</span>
+                <h3 class="selected-name-title">{{ store.selectedProfessional.nome }}</h3>
+                <p class="selected-spec-text">{{ store.selectedProfessional.especialidade }} • ★ {{ store.selectedProfessional.nota }}</p>
+              </div>
+            </div>
+            <button type="button" class="clear-selected-btn" @click="store.clearSelectedProfessional">
+              Trocar
+            </button>
+          </div>
+
+          <div class="form-fields-grid">
+
+            <!-- 1. SELETOR INTUITIVO DE PROFISSIONAL (EVENTOS | CASA | LIMPEZA + CARDS) -->
+            <div class="pro-selector-showcase-card">
+              <h3 class="pro-selector-heading">Qual profissional você precisa?</h3>
+
+              <!-- Abas de Macro-Categoria (Eventos | Casa | Limpeza) -->
+              <div class="macro-group-pills">
+                <button
+                  v-for="grp in professionGroups"
+                  :key="grp.id"
+                  type="button"
+                  class="macro-pill-btn"
+                  :class="{ active: selectedGroupName === grp.id }"
+                  @click="selectMacroGroup(grp.id)"
+                >
+                  {{ grp.label }}
+                </button>
               </div>
 
-              <!-- CARD DO FORMULÁRIO PADRÃO (+SERVE) -->
-              <div id="form-event-card" class="form-card-container">
-                
-                <!-- BANNER QUANDO HÁ UM PROFISSIONAL SELECIONADO -->
-                <div v-if="store.selectedProfessional" class="selected-pro-card-banner">
-                  <div class="selected-pro-left">
-                    <img :src="store.selectedProfessional.avatar" :alt="store.selectedProfessional.nome" class="selected-pro-img" />
-                    <div class="selected-pro-meta">
-                      <span class="selected-headline-tag">CONTRATAÇÃO DIRETA</span>
-                      <h3 class="selected-name-title">{{ store.selectedProfessional.nome }}</h3>
-                      <p class="selected-spec-text">{{ store.selectedProfessional.especialidade }} • ★ {{ store.selectedProfessional.nota }}</p>
-                    </div>
-                  </div>
-                  <button class="clear-selected-btn" @click="store.clearSelectedProfessional">
-                    Trocar
+              <!-- Linha divisória sutil -->
+              <div class="pro-selector-divider"></div>
+
+              <!-- Grade de Profissões da Macro-Categoria (Setas só aparecem se houver mais de 3 profissões) -->
+              <div class="pro-subcards-carousel-wrap">
+                <button
+                  v-if="hasMoreProfessionsInGroup"
+                  type="button"
+                  class="subcard-nav-arrow left"
+                  @click="stepProfession(-1)"
+                  aria-label="Profissão anterior"
+                >
+                  <ion-icon :icon="chevronBackOutline"></ion-icon>
+                </button>
+
+                <div class="pro-subcards-grid">
+                  <button
+                    v-for="profName in visibleGroupProfessions"
+                    :key="profName"
+                    type="button"
+                    class="pro-subcard-item"
+                    :class="{ active: selectedCategoryName === profName }"
+                    @click="setCategory(profName)"
+                  >
+                    <ion-icon
+                      :icon="getCategoryIcon(CATEGORY_CONFIGS[profName]?.icon)"
+                      class="pro-subcard-icon"
+                    ></ion-icon>
+                    <span class="pro-subcard-label">{{ profName }}</span>
                   </button>
                 </div>
 
-                <div class="form-fields-grid">
+                <button
+                  v-if="hasMoreProfessionsInGroup"
+                  type="button"
+                  class="subcard-nav-arrow right"
+                  @click="stepProfession(1)"
+                  aria-label="Próxima profissão"
+                >
+                  <ion-icon :icon="chevronForwardOutline"></ion-icon>
+                </button>
+              </div>
+            </div>
 
-                  <!-- 1. SELETOR INTUITIVO DE PROFISSIONAL / MODALIDADE (INTEGRADO AO FORMULÁRIO) -->
-                  <div class="form-section-block">
-                    <div class="section-label-row">
-                      <label class="field-label-clean">
-                        <ion-icon :icon="briefcaseOutline" class="label-neon-icon"></ion-icon>
-                        <span>Qual profissional você precisa?</span>
-                      </label>
-                    </div>
-
-                    <div class="integrated-role-selector">
-                      <button
-                        v-for="cat in store.categoriesList"
-                        :key="cat.id"
-                        type="button"
-                        class="role-tab-btn"
-                        :class="{ active: selectedCategoryName === cat.name }"
-                        @click="setCategory(cat.name)"
-                      >
-                        <ion-icon :icon="getCategoryIcon(cat.icon)" class="role-tab-icon"></ion-icon>
-                        <span>{{ cat.name }}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- 2. DATA, INÍCIO E FIM DO EVENTO / ATENDIMENTO (PRECISO COMO NO DESIGN PADRÃO) -->
-                  <div class="form-section-block">
-                    <div class="section-label-row">
-                      <label class="field-label-clean">
-                        <ion-icon :icon="calendarOutline" class="label-neon-icon"></ion-icon>
-                        <span>Quando você precisa do profissional?</span>
-                      </label>
-                      <div class="quick-date-links">
-                        <button
-                          type="button"
-                          class="tiny-date-shortcut"
-                          :class="{ active: activeDateShortcut === 'today' }"
-                          @click="applyDateShortcut('today')"
-                        >
-                          Hoje
-                        </button>
-                        <button
-                          type="button"
-                          class="tiny-date-shortcut"
-                          :class="{ active: activeDateShortcut === 'tomorrow' }"
-                          @click="applyDateShortcut('tomorrow')"
-                        >
-                          Amanhã
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Grade de 3 Colunas: Data | Início | Fim (Fiel à Referência Original) -->
-                    <div class="precise-datetime-grid">
-                      <div class="boxed-field date-col">
-                        <ion-icon :icon="calendarOutline" class="boxed-icon"></ion-icon>
-                        <div class="boxed-inner">
-                          <span class="boxed-label">Data do evento</span>
-                          <input
-                            type="date"
-                            v-model="store.eventForm.data"
-                            @change="activeDateShortcut = 'custom'"
-                            class="boxed-input"
-                          />
-                        </div>
-                      </div>
-
-                      <div class="boxed-field time-col">
-                        <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
-                        <div class="boxed-inner">
-                          <span class="boxed-label">Início</span>
-                          <input
-                            type="time"
-                            v-model="store.eventForm.horarioInicio"
-                            class="boxed-input"
-                          />
-                        </div>
-                      </div>
-
-                      <div class="boxed-field time-col">
-                        <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
-                        <div class="boxed-inner">
-                          <span class="boxed-label">Fim (Até)</span>
-                          <input
-                            type="time"
-                            v-model="store.eventForm.horarioFim"
-                            class="boxed-input"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Resumo automático de duração -->
-                    <div class="duration-helper-bar">
-                      <span>⏱️ Período agendado: <strong>{{ formattedDateBR }}</strong> das <strong>{{ store.eventForm.horarioInicio }}</strong> às <strong>{{ store.eventForm.horarioFim }}</strong> ({{ calculatedDuration }})</span>
-                    </div>
-                  </div>
-
-                  <!-- 3. QUANTIDADE / ESCOPO & TIPO DE EVENTO (2 COLUNAS LADO A LADO COMO NO PADRÃO) -->
-                  <div class="two-cols-boxed-row">
-                    <!-- Coluna 1: Quantidade / Porte -->
-                    <div class="boxed-field">
-                      <ion-icon :icon="peopleOutline" class="boxed-icon"></ion-icon>
-                      <div class="boxed-inner">
-                        <span class="boxed-label">{{ activeConfig.scopeLabel }}</span>
-                        <select v-model="store.eventForm.qtdProfissionais" class="boxed-select">
-                          <option v-for="sc in activeConfig.scopes" :key="sc" :value="sc">
-                            {{ sc }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <!-- Coluna 2: Tipo de Evento / Serviço -->
-                    <div class="boxed-field">
-                      <ion-icon :icon="sparklesOutline" class="boxed-icon"></ion-icon>
-                      <div class="boxed-inner">
-                        <span class="boxed-label">{{ activeConfig.serviceTypeLabel }}</span>
-                        <select v-model="store.eventForm.tipoEvento" class="boxed-select">
-                          <option v-for="opt in activeConfig.serviceTypes" :key="opt" :value="opt">
-                            {{ opt }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 4. LOCAL DO EVENTO + BREVE DESCRIÇÃO -->
-                  <div class="location-desc-stack">
-                    <!-- Local -->
-                    <div class="boxed-field">
-                      <ion-icon :icon="locationOutline" class="boxed-icon"></ion-icon>
-                      <div class="boxed-inner">
-                        <span class="boxed-label">{{ activeConfig.locationLabel }}</span>
-                        <input
-                          type="text"
-                          v-model="store.eventForm.local"
-                          :placeholder="activeConfig.locationPlaceholder"
-                          class="boxed-input"
-                        />
-                      </div>
-                    </div>
-
-                    <!-- Breve Descrição -->
-                    <div class="boxed-field">
-                      <ion-icon :icon="documentTextOutline" class="boxed-icon"></ion-icon>
-                      <div class="boxed-inner">
-                        <span class="boxed-label">{{ activeConfig.detailsLabel }}</span>
-                        <input
-                          type="text"
-                          v-model="store.eventForm.descricao"
-                          :placeholder="activeConfig.detailsPlaceholder"
-                          class="boxed-input"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 5. VALOR OFERECIDO POR PROFISSIONAL (PISO MÍNIMO DE R$ 50,00) -->
-                  <div class="boxed-field price-boxed-field" :class="{ 'min-price-alert': minPriceWarningActive }">
-                    <div class="price-left-meta">
-                      <div class="currency-circle">$</div>
-                      <div class="boxed-inner">
-                        <span class="boxed-label">Valor oferecido por profissional (Piso: R$ 50)</span>
-                        <div class="price-value-line">
-                          <span class="rs-prefix">R$</span>
-                          <input
-                            type="number"
-                            min="50"
-                            v-model.number="store.eventForm.valorOferecido"
-                            @blur="validateMinimumPrice"
-                            class="boxed-price-input"
-                          />
-                          <span class="rs-decimals">,00</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="price-stepper-controls">
-                      <button type="button" class="step-circle-btn" @click="adjustPrice(-10)" title="Diminuir R$ 10">−</button>
-                      <button type="button" class="step-circle-btn plus" @click="adjustPrice(10)" title="Aumentar R$ 10">+</button>
-                    </div>
-                  </div>
-
-                  <!-- Aviso inline caso tente baixar de R$ 50 -->
-                  <div v-if="minPriceWarningActive" class="min-floor-inline-notice">
-                    ⚠️ O piso mínimo para contratação na plataforma é de <strong>R$ 50,00</strong>.
-                  </div>
-
-                  <!-- Sugestões rápidas de valor da categoria -->
-                  <div class="price-presets-row">
-                    <span class="preset-hint">Valores comuns para {{ activeConfig.noun }}:</span>
-                    <button
-                      v-for="p in activeConfig.prices"
-                      :key="p"
-                      type="button"
-                      class="price-preset-pill"
-                      :class="{ active: store.eventForm.valorOferecido === p }"
-                      @click="setPresetPrice(p)"
-                    >
-                      R$ {{ p }}
-                    </button>
-                  </div>
-
+            <!-- 2. DATA, INÍCIO E FIM DO EVENTO / ATENDIMENTO -->
+            <div class="form-section-block">
+              <div class="section-label-row">
+                <label class="field-label-clean">
+                  <ion-icon :icon="calendarOutline" class="label-neon-icon"></ion-icon>
+                  <span>Quando você precisa?</span>
+                </label>
+                <div class="quick-date-links">
+                  <button
+                    type="button"
+                    class="tiny-date-shortcut"
+                    :class="{ active: activeDateShortcut === 'today' }"
+                    @click="applyDateShortcut('today')"
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type="button"
+                    class="tiny-date-shortcut"
+                    :class="{ active: activeDateShortcut === 'tomorrow' }"
+                    @click="applyDateShortcut('tomorrow')"
+                  >
+                    Amanhã
+                  </button>
                 </div>
+              </div>
 
-                <!-- Botão de Ação Principal -->
-                <button class="primary-search-button" @click="handleConfirmOrder">
-                  <span>{{ actionButtonText }}</span>
-                  <ion-icon :icon="arrowForwardOutline" class="btn-arrow"></ion-icon>
+              <!-- Grade Mobile: Data em cima | Início e Fim lado a lado -->
+              <div class="precise-datetime-grid">
+                <button
+                  type="button"
+                  class="boxed-field date-col clickable-date-trigger"
+                  @click="isCalendarModalOpen = true"
+                >
+                  <ion-icon :icon="calendarOutline" class="boxed-icon"></ion-icon>
+                  <div class="boxed-inner">
+                    <span class="boxed-label">Data do evento</span>
+                    <span class="boxed-date-display">{{ formattedDateDisplay }}</span>
+                  </div>
+                  <ion-icon :icon="chevronDownOutline" class="date-trigger-chevron"></ion-icon>
                 </button>
 
-                <!-- Rodapé de Confiança Padrão -->
-                <div class="trust-footer-row">
-                  <ion-icon :icon="shieldCheckmarkOutline" class="trust-shield-icon"></ion-icon>
-                  <div class="trust-copy">
-                    <strong>Contrate com segurança</strong>
-                    <span>Profissionais verificados • Avaliações reais • Pagamento protegido</span>
+                <div class="boxed-field time-col">
+                  <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
+                  <div class="boxed-inner">
+                    <span class="boxed-label">Início</span>
+                    <input
+                      type="time"
+                      v-model="store.eventForm.horarioInicio"
+                      class="boxed-input"
+                    />
                   </div>
                 </div>
 
+                <div class="boxed-field time-col">
+                  <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
+                  <div class="boxed-inner">
+                    <span class="boxed-label">Fim (Até)</span>
+                    <input
+                      type="time"
+                      v-model="store.eventForm.horarioFim"
+                      class="boxed-input"
+                    />
+                  </div>
+                </div>
               </div>
-            </ion-col>
 
-            <!-- COLUNA DIREITA: DESTAQUES DA SEMANA PADRÃO (Mobile: 100% | Desktop: 5/12) -->
-            <ion-col size="12" size-lg="5" class="right-col">
-              <div class="highlights-card">
-                <div class="highlights-header">
-                  <div class="highlights-title-row">
-                    <ion-icon :icon="starOutline" class="highlight-star-icon"></ion-icon>
-                    <h2 class="highlights-title">Destaques da semana</h2>
+              <!-- Resumo automático de duração -->
+              <div class="duration-helper-bar">
+                <span>⏱️ {{ formattedDateBR }} das <strong>{{ store.eventForm.horarioInicio }}</strong> às <strong>{{ store.eventForm.horarioFim }}</strong> ({{ calculatedDuration }})</span>
+              </div>
+            </div>
+
+            <!-- 3. QUANTIDADE & TIPO DE EVENTO (2 COLUNAS LADO A LADO NO MOBILE) -->
+            <div class="two-cols-boxed-row">
+              <div class="boxed-field">
+                <ion-icon :icon="peopleOutline" class="boxed-icon"></ion-icon>
+                <div class="boxed-inner">
+                  <span class="boxed-label">{{ activeConfig.scopeLabel }}</span>
+                  <select v-model="store.eventForm.qtdProfissionais" class="boxed-select">
+                    <option v-for="sc in activeConfig.scopes" :key="sc" :value="sc">
+                      {{ sc }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="boxed-field">
+                <ion-icon :icon="sparklesOutline" class="boxed-icon"></ion-icon>
+                <div class="boxed-inner">
+                  <span class="boxed-label">{{ activeConfig.serviceTypeLabel }}</span>
+                  <select v-model="store.eventForm.tipoEvento" class="boxed-select">
+                    <option v-for="opt in activeConfig.serviceTypes" :key="opt" :value="opt">
+                      {{ opt }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. LOCAL DO EVENTO + BREVE DESCRIÇÃO -->
+            <div class="location-desc-stack">
+              <div class="boxed-field">
+                <ion-icon :icon="locationOutline" class="boxed-icon"></ion-icon>
+                <div class="boxed-inner">
+                  <span class="boxed-label">{{ activeConfig.locationLabel }}</span>
+                  <input
+                    type="text"
+                    v-model="store.eventForm.local"
+                    :placeholder="activeConfig.locationPlaceholder"
+                    class="boxed-input"
+                  />
+                </div>
+              </div>
+
+              <div class="boxed-field">
+                <ion-icon :icon="documentTextOutline" class="boxed-icon"></ion-icon>
+                <div class="boxed-inner">
+                  <span class="boxed-label">{{ activeConfig.detailsLabel }}</span>
+                  <input
+                    type="text"
+                    v-model="store.eventForm.descricao"
+                    :placeholder="activeConfig.detailsPlaceholder"
+                    class="boxed-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. VALOR OFERECIDO POR PROFISSIONAL (PISO MÍNIMO DE R$ 50,00) -->
+            <div class="boxed-field price-boxed-field" :class="{ 'min-price-alert': minPriceWarningActive }">
+              <div class="price-left-meta">
+                <div class="currency-circle">$</div>
+                <div class="boxed-inner">
+                  <span class="boxed-label">Valor por profissional (Mín: R$ 50)</span>
+                  <div class="price-value-line">
+                    <span class="rs-prefix">R$</span>
+                    <input
+                      type="number"
+                      min="50"
+                      v-model.number="store.eventForm.valorOferecido"
+                      @blur="validateMinimumPrice"
+                      class="boxed-price-input"
+                    />
+                    <span class="rs-decimals">,00</span>
                   </div>
-                  <p class="highlights-subtitle">Profissionais mais contratados e bem avaliados em {{ activeConfig.plural.toLowerCase() }}</p>
+                </div>
+              </div>
+
+              <div class="price-stepper-controls">
+                <button type="button" class="step-circle-btn" @click="adjustPrice(-10)" title="Diminuir R$ 10">−</button>
+                <button type="button" class="step-circle-btn plus" @click="adjustPrice(10)" title="Aumentar R$ 10">+</button>
+              </div>
+            </div>
+
+            <div v-if="minPriceWarningActive" class="min-floor-inline-notice">
+              ⚠️ O piso mínimo para contratação na plataforma é de <strong>R$ 50,00</strong>.
+            </div>
+
+            <!-- Sugestões rápidas de valor da categoria -->
+            <div class="price-presets-row">
+              <span class="preset-hint">Sugestões:</span>
+              <button
+                v-for="p in activeConfig.prices"
+                :key="p"
+                type="button"
+                class="price-preset-pill"
+                :class="{ active: store.eventForm.valorOferecido === p }"
+                @click="setPresetPrice(p)"
+              >
+                R$ {{ p }}
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Botão de Ação Principal Mobile -->
+          <button type="button" class="primary-search-button" @click="handleConfirmOrder">
+            <span>{{ actionButtonText }}</span>
+            <ion-icon :icon="arrowForwardOutline" class="btn-arrow"></ion-icon>
+          </button>
+
+          <!-- Rodapé de Confiança Compacto -->
+          <div class="trust-footer-row">
+            <ion-icon :icon="shieldCheckmarkOutline" class="trust-shield-icon"></ion-icon>
+            <div class="trust-copy">
+              <strong>Contrate com segurança</strong>
+              <span>Profissionais verificados • Pagamento protegido</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SEÇÃO MOBILE: PROFISSIONAIS DISPONÍVEIS -->
+        <div id="available-section" class="available-mobile-section">
+          <div class="section-heading-row">
+            <div class="heading-left">
+              <ion-icon :icon="personOutline" class="section-icon-neon"></ion-icon>
+              <h2 class="available-section-title">{{ activeConfig.plural }} disponíveis</h2>
+            </div>
+            <span class="pros-count-badge">{{ filteredAvailable.length }} online</span>
+          </div>
+
+          <div class="available-pros-stack">
+            <div
+              v-for="pro in displayedAvailablePros"
+              :key="pro.id"
+              class="pro-profile-card"
+            >
+              <div class="card-left-block" @click="openProfileModal(pro)">
+                <div class="avatar-status-wrap">
+                  <img :src="pro.avatar" :alt="pro.nome" class="pro-main-avatar" />
+                  <span class="online-dot"></span>
                 </div>
 
-                <div class="highlights-list">
-                  <div
-                    v-for="(pro, idx) in weeklyHighlights"
-                    :key="pro.id"
-                    class="highlight-row-item"
-                    @click="openProfileModal(pro)"
-                  >
-                    <div class="rank-ribbon" :class="`rank-${idx + 1}`">
-                      <span class="ribbon-text">{{ idx + 1 }}º</span>
-                    </div>
+                <div class="pro-core-info">
+                  <div class="pro-name-verified">
+                    <h3 class="pro-full-name">{{ pro.nome }}</h3>
+                    <ion-icon :icon="checkmarkCircle" class="verified-badge"></ion-icon>
+                    <span class="pro-base-price-tag">R$ {{ pro.valorBase }}</span>
+                  </div>
 
-                    <img :src="pro.avatar" :alt="pro.nome" class="highlight-avatar" />
+                  <div class="pro-stats-strip">
+                    <span class="rating-val">★ {{ pro.nota }}</span>
+                    <span class="dot-sep">•</span>
+                    <span class="jobs-val">{{ pro.servicos }} serviços</span>
+                    <span class="dot-sep">•</span>
+                    <span class="jobs-val">{{ pro.exp }}</span>
+                  </div>
 
-                    <div class="highlight-details">
-                      <div class="name-verified-row">
-                        <span class="pro-name">{{ pro.nome }}</span>
-                        <ion-icon :icon="checkmarkCircle" class="verified-badge"></ion-icon>
-                      </div>
-                      <div class="pro-stats-row">
-                        <span class="star-rating">★ {{ pro.nota }}</span>
-                        <span class="services-count">{{ pro.servicos }} serviços</span>
-                      </div>
-                    </div>
+                  <div class="pro-pills-row">
+                    <span v-for="tag in pro.tags" :key="tag" class="pro-pill">{{ tag }}</span>
                   </div>
                 </div>
+              </div>
 
-                <button class="view-all-highlights-link" @click="scrollToAvailable">
-                  <span>Ver todos os destaques</span>
+              <div class="card-mobile-actions">
+                <button type="button" class="view-profile-btn" @click="openProfileModal(pro)">
+                  <span>Ver perfil</span>
+                </button>
+                <button type="button" class="quick-select-pro-btn" @click="selectAndScrollToForm(pro)">
+                  <span>Selecionar</span>
                   <ion-icon :icon="arrowForwardOutline"></ion-icon>
                 </button>
               </div>
-            </ion-col>
+            </div>
+          </div>
 
-          </ion-row>
+          <div class="load-more-container" v-if="filteredAvailable.length > 3">
+            <button type="button" class="load-more-btn" @click="toggleShowMorePros">
+              <span>{{ showAllPros ? 'Recolher lista' : `Ver mais ${activeConfig.plural.toLowerCase()} disponíveis` }}</span>
+              <ion-icon :icon="showAllPros ? chevronUpOutline : chevronDownOutline"></ion-icon>
+            </button>
+          </div>
+        </div>
 
-          <!-- SEÇÃO INFERIOR: PROFISSIONAIS DISPONÍVEIS PARA VOCÊ -->
-          <ion-row id="available-section" class="available-section-row">
-            <ion-col size="12">
-              <div class="section-heading-row">
-                <ion-icon :icon="personOutline" class="section-icon-neon"></ion-icon>
-                <h2 class="available-section-title">{{ activeConfig.plural }} disponíveis para você</h2>
-              </div>
+        <!-- CARD COMPACTO DE SUPORTE MOBILE -->
+        <div class="support-banner-box" @click="isSupportModalOpen = true">
+          <div class="support-left">
+            <div class="headphone-icon-circle">
+              <ion-icon :icon="headsetOutline"></ion-icon>
+            </div>
+            <div class="support-text-meta">
+              <h3 class="support-title">Precisa de ajuda?</h3>
+              <p class="support-subtitle">Suporte 24h para clientes e prestadores.</p>
+            </div>
+          </div>
+          <ion-icon :icon="arrowForwardOutline" class="support-chevron"></ion-icon>
+        </div>
 
-              <div class="available-pros-stack">
-                <div
-                  v-for="pro in displayedAvailablePros"
-                  :key="pro.id"
-                  class="pro-profile-card"
-                >
-                  <div class="card-left-block" @click="openProfileModal(pro)">
-                    <div class="avatar-status-wrap">
-                      <img :src="pro.avatar" :alt="pro.nome" class="pro-main-avatar" />
-                      <span class="online-dot"></span>
-                    </div>
-
-                    <div class="pro-core-info">
-                      <div class="pro-name-verified">
-                        <h3 class="pro-full-name">{{ pro.nome }}</h3>
-                        <ion-icon :icon="checkmarkCircle" class="verified-badge"></ion-icon>
-                      </div>
-
-                      <div class="pro-stats-strip">
-                        <span class="rating-val">★ {{ pro.nota }}</span>
-                        <span class="dot-sep">•</span>
-                        <span class="jobs-val">{{ pro.servicos }} serviços</span>
-                      </div>
-
-                      <div class="pro-pills-row">
-                        <span v-for="tag in pro.tags" :key="tag" class="pro-pill">{{ tag }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="card-meta-block">
-                    <div class="meta-line">
-                      <ion-icon :icon="calendarOutline" class="meta-icon"></ion-icon>
-                      <span>{{ pro.exp }} de experiência</span>
-                    </div>
-                    <div class="meta-line">
-                      <ion-icon :icon="locationOutline" class="meta-icon"></ion-icon>
-                      <span>{{ pro.local }}</span>
-                    </div>
-                  </div>
-
-                  <div class="card-action-block">
-                    <button class="view-profile-btn" @click="openProfileModal(pro)">
-                      <span>Ver perfil</span>
-                      <ion-icon :icon="arrowForwardOutline"></ion-icon>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="load-more-container" v-if="filteredAvailable.length > 3">
-                <button class="load-more-btn" @click="toggleShowMorePros">
-                  <span>{{ showAllPros ? 'Recolher lista' : `Ver mais ${activeConfig.plural.toLowerCase()} disponíveis` }}</span>
-                  <ion-icon :icon="showAllPros ? chevronUpOutline : chevronDownOutline"></ion-icon>
-                </button>
-              </div>
-            </ion-col>
-          </ion-row>
-
-          <!-- CARD: PRECISA DE AJUDA? / SUPORTE -->
-          <ion-row class="support-banner-row">
-            <ion-col size="12">
-              <div class="support-banner-box">
-                <div class="support-left">
-                  <div class="headphone-icon-circle">
-                    <ion-icon :icon="headsetOutline"></ion-icon>
-                  </div>
-                  <div class="support-text-meta">
-                    <h3 class="support-title">Precisa de ajuda?</h3>
-                    <p class="support-subtitle">Nossa equipe está pronta para te atender.</p>
-                  </div>
-                </div>
-
-                <div class="support-right">
-                  <button class="support-cta-btn" @click="isSupportModalOpen = true">
-                    <span>Falar com suporte</span>
-                    <ion-icon :icon="arrowForwardOutline"></ion-icon>
-                  </button>
-                </div>
-              </div>
-            </ion-col>
-          </ion-row>
-
-        </ion-grid>
       </div>
 
       <!-- ================= MODAL: PERFIL DO PROFISSIONAL ================= -->
       <ion-modal
         :is-open="isProfileModalOpen"
-        :breakpoints="[0, 0.8, 1]"
-        :initial-breakpoint="0.8"
+        :breakpoints="[0, 0.82, 0.96]"
+        :initial-breakpoint="0.82"
         @didDismiss="isProfileModalOpen = false"
         class="custom-modal-sheet"
       >
@@ -515,8 +458,8 @@
       <!-- ================= MODAL: CONFIRMAÇÃO DO PEDIDO ================= -->
       <ion-modal
         :is-open="isOrderSuccessModalOpen"
-        :breakpoints="[0, 0.78, 0.92]"
-        :initial-breakpoint="0.78"
+        :breakpoints="[0, 0.8, 0.94]"
+        :initial-breakpoint="0.8"
         @didDismiss="isOrderSuccessModalOpen = false"
         class="custom-modal-sheet"
       >
@@ -605,6 +548,14 @@
         </ion-content>
       </ion-modal>
 
+      <!-- COMPONENTE REUTILIZÁVEL: MODAL DE CALENDÁRIO AMIGÁVEL -->
+      <CalendarModal
+        v-model:is-open="isCalendarModalOpen"
+        v-model="store.eventForm.data"
+        title="Escolha a data do evento"
+        @select="onCalendarDateSelected"
+      />
+
       <!-- Toast de feedback -->
       <ion-toast
         :is-open="showToast"
@@ -625,9 +576,6 @@ import {
   IonHeader,
   IonToolbar,
   IonContent,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonIcon,
   IonModal,
   IonToast
@@ -636,18 +584,17 @@ import {
   homeOutline,
   clipboardOutline,
   chatbubbleOutline,
-  personCircleOutline,
   chevronDownOutline,
   chevronUpOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
   calendarOutline,
   timeOutline,
   personOutline,
   peopleOutline,
-  briefcaseOutline,
   documentTextOutline,
   arrowForwardOutline,
   shieldCheckmarkOutline,
-  starOutline,
   checkmarkCircle,
   locationOutline,
   headsetOutline,
@@ -655,9 +602,13 @@ import {
   sparklesOutline,
   waterOutline,
   constructOutline,
-  wineOutline
+  wineOutline,
+  restaurantOutline,
+  flameOutline,
+  shirtOutline
 } from 'ionicons/icons';
-import { useAppStore, CATEGORY_CONFIGS } from '@/stores/useAppStore';
+import { useAppStore, CATEGORY_CONFIGS, PROFESSION_GROUPS } from '@/stores/useAppStore';
+import CalendarModal from '@/components/CalendarModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -668,16 +619,39 @@ const toastMsg = ref('');
 const minPriceWarningActive = ref(false);
 
 // Modais locais
+const isCalendarModalOpen = ref(false);
 const isProfileModalOpen = ref(false);
 const isOrderSuccessModalOpen = ref(false);
 const isSupportModalOpen = ref(false);
 const activeModalPro = ref(null);
 const createdOrderData = ref(null);
 
-// Estado da Categoria e Datas
+// Estado da Macro-Categoria, Profissão e Datas
+const professionGroups = PROFESSION_GROUPS;
+const selectedGroupName = ref('Eventos');
 const selectedCategoryName = ref('Garçom');
+const groupPageStartIndex = ref(0);
 const showAllPros = ref(false);
 const activeDateShortcut = ref('today');
+
+const activeGroupProfessions = computed(() => {
+  const found = professionGroups.find(g => g.id === selectedGroupName.value);
+  return found ? found.items : professionGroups[0].items;
+});
+
+const hasMoreProfessionsInGroup = computed(() => {
+  return activeGroupProfessions.value.length > 3;
+});
+
+const visibleGroupProfessions = computed(() => {
+  const list = activeGroupProfessions.value;
+  if (list.length <= 3) return list;
+  const result = [];
+  for (let i = 0; i < 3; i++) {
+    result.push(list[(groupPageStartIndex.value + i) % list.length]);
+  }
+  return result;
+});
 
 const activeConfig = computed(() => {
   return CATEGORY_CONFIGS[selectedCategoryName.value] || CATEGORY_CONFIGS.Garçom;
@@ -685,41 +659,86 @@ const activeConfig = computed(() => {
 
 function getCategoryIcon(iconKey) {
   switch (iconKey) {
+    case 'restaurant': return restaurantOutline;
+    case 'wine': return wineOutline;
+    case 'flame': return flameOutline;
     case 'flash': return flashOutline;
     case 'sparkles': return sparklesOutline;
     case 'water': return waterOutline;
     case 'construct': return constructOutline;
-    default: return wineOutline;
+    case 'home': return homeOutline;
+    case 'shirt': return shirtOutline;
+    default: return restaurantOutline;
   }
 }
 
-// A cada categoria selecionada, adapta todos os campos do formulário
+function selectMacroGroup(groupId) {
+  selectedGroupName.value = groupId;
+  groupPageStartIndex.value = 0;
+  const grp = professionGroups.find(g => g.id === groupId);
+  if (grp && grp.items.length > 0 && !grp.items.includes(selectedCategoryName.value)) {
+    setCategory(grp.items[0]);
+  }
+}
+
+function stepProfession(delta) {
+  const list = activeGroupProfessions.value;
+  if (list.length <= 3) return;
+  groupPageStartIndex.value = (groupPageStartIndex.value + delta + list.length) % list.length;
+}
+
 function setCategory(catName) {
-  selectedCategoryName.value = catName;
-  store.eventForm.categoria = catName;
+  const conf = CATEGORY_CONFIGS[catName] || CATEGORY_CONFIGS.Garçom;
+  selectedCategoryName.value = conf.name;
+  if (conf.group) {
+    selectedGroupName.value = conf.group;
+  }
+  store.eventForm.categoria = conf.name;
   minPriceWarningActive.value = false;
 
-  const conf = CATEGORY_CONFIGS[catName] || CATEGORY_CONFIGS.Garçom;
   store.eventForm.tipoEvento = conf.serviceTypes[0];
   store.eventForm.qtdProfissionais = conf.scopes[1] || conf.scopes[0];
   store.eventForm.horarioInicio = conf.defaultStart || '18:00';
   store.eventForm.horarioFim = conf.defaultEnd || '00:00';
   store.eventForm.valorOferecido = conf.defaultPrice;
 
-  if (store.selectedProfessional && store.selectedProfessional.categoria !== catName) {
+  if (store.selectedProfessional && store.selectedProfessional.categoria !== conf.name) {
     store.clearSelectedProfessional();
   }
+}
+
+function getLocalISODate(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function applyDateShortcut(mode) {
   activeDateShortcut.value = mode;
   const now = new Date();
   if (mode === 'today') {
-    store.eventForm.data = now.toISOString().split('T')[0];
+    store.eventForm.data = getLocalISODate(now);
   } else if (mode === 'tomorrow') {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    store.eventForm.data = tomorrow.toISOString().split('T')[0];
+    store.eventForm.data = getLocalISODate(tomorrow);
+  }
+}
+
+function onCalendarDateSelected(selectedISO) {
+  const now = new Date();
+  const todayStr = getLocalISODate(now);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = getLocalISODate(tomorrow);
+
+  if (selectedISO === todayStr) {
+    activeDateShortcut.value = 'today';
+  } else if (selectedISO === tomorrowStr) {
+    activeDateShortcut.value = 'tomorrow';
+  } else {
+    activeDateShortcut.value = 'custom';
   }
 }
 
@@ -730,20 +749,31 @@ const formattedDateBR = computed(() => {
   return `${d}/${m}/${y}`;
 });
 
+const formattedDateDisplay = computed(() => {
+  const raw = store.eventForm.data;
+  if (!raw || !raw.includes('-')) return 'Selecionar data';
+  const [y, m, d] = raw.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const shortWeekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const wd = shortWeekdays[dateObj.getDay()];
+  const dd = String(d).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${wd}, ${dd}/${mm}/${y}`;
+});
+
 const calculatedDuration = computed(() => {
   const start = store.eventForm.horarioInicio || '18:00';
   const end = store.eventForm.horarioFim || '00:00';
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
-  if (isNaN(sh) || isNaN(eh)) return '6 horas';
+  if (isNaN(sh) || isNaN(eh)) return '6h';
   let diffMinutes = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
   if (diffMinutes <= 0) diffMinutes += 24 * 60;
   const hours = Math.floor(diffMinutes / 60);
   const mins = diffMinutes % 60;
-  return mins > 0 ? `${hours}h${mins}min` : `${hours}h de duração`;
+  return mins > 0 ? `${hours}h${mins}m` : `${hours}h`;
 });
 
-// Validação de Piso Mínimo de R$ 50,00 com Notificação
 function triggerMinimumFloorAlert() {
   store.eventForm.valorOferecido = 50;
   minPriceWarningActive.value = true;
@@ -802,12 +832,13 @@ function toggleShowMorePros() {
 }
 
 onMounted(() => {
+  store.role = 'CLIENT';
   applyDateShortcut('today');
 
   if (route.query.category) {
     const cat = String(route.query.category);
-    const match = store.categoriesList.find(c => c.name.toLowerCase() === cat.toLowerCase());
-    if (match) setCategory(match.name);
+    const matchKey = Object.keys(CATEGORY_CONFIGS).find(k => k.toLowerCase() === cat.toLowerCase());
+    if (matchKey) setCategory(matchKey);
   }
 
   if (route.query.proId) {
@@ -822,7 +853,6 @@ onMounted(() => {
   }
 });
 
-// Navegação & Ações
 function goToHome() {
   router.push('/home');
 }
@@ -830,11 +860,6 @@ function goToHome() {
 function openOrdersModal() {
   store.profileMenuModalOpen = false;
   store.ordersModalOpen = true;
-}
-
-function openProfileMenuModal() {
-  store.ordersModalOpen = false;
-  store.profileMenuModalOpen = true;
 }
 
 function openChatModalDirect() {
@@ -859,7 +884,7 @@ function selectAndScrollToForm(pro) {
   toastMsg.value = `${pro.nome} selecionado! Revise os dados e confirme.`;
   showToast.value = true;
   const el = document.getElementById('form-event-card');
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function hireFromModal(pro) {
@@ -893,12 +918,6 @@ function viewOrdersFromSuccess() {
   store.ordersModalOpen = true;
 }
 
-function scrollToAvailable() {
-  showAllPros.value = true;
-  const el = document.getElementById('available-section');
-  if (el) el.scrollIntoView({ behavior: 'smooth' });
-}
-
 function openWhatsAppSupport() {
   isSupportModalOpen.value = false;
   store.openChatWithPro({
@@ -925,7 +944,7 @@ function reportIssue() {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* ================= HEADER ================= */
+/* ================= HEADER MOBILE APP ================= */
 .main-header {
   background: #030407;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -933,63 +952,95 @@ function reportIssue() {
 
 .header-toolbar {
   --background: #030407;
-  --min-height: 58px;
+  --min-height: 54px;
 }
 
 .header-inner {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 16px;
-  height: 58px;
+  padding: 0 12px;
+  height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-home-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
 }
 
 .neon-plus {
   color: #D4FF24;
-  font-size: 27px;
+  font-size: 22px;
   font-weight: 900;
   line-height: 1;
 }
 
 .brand-name {
   color: #ffffff;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 900;
   font-style: italic;
-  letter-spacing: 0.6px;
 }
 
-.desktop-nav {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.active-cat-header-pill {
+  background: rgba(212, 255, 36, 0.12);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
 }
 
-.nav-item {
+.mobile-nav-actions {
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #d1d5db;
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 500;
+  gap: 6px;
+}
+
+.mobile-orders-pill {
+  background: #0b0f17;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+  border-radius: 9px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
 }
 
 .orders-count-dot {
   background: #D4FF24;
   color: #050800;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 1px 6px;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 5px;
   border-radius: 99px;
 }
 
@@ -997,74 +1048,34 @@ function reportIssue() {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #e5e7eb;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
+  font-size: 17px;
   cursor: pointer;
 }
 
-/* ================= CONTEÚDO ================= */
+/* ================= CONTEÚDO MOBILE ================= */
 .dashboard-content {
   --background: #030407;
 }
 
 .page-wrapper {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 16px 16px 96px;
+  padding: 12px 12px 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.left-col {
-  padding-right: 0;
-}
-
-@media (min-width: 992px) {
-  .left-col {
-    padding-right: 22px;
-  }
-}
-
-.hero-header-box {
-  margin-bottom: 16px;
-}
-
-.hero-headline {
-  font-size: clamp(25px, 4.2vw, 36px);
-  font-weight: 800;
-  line-height: 1.18;
-  color: #ffffff;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.4px;
-}
-
-.neon-highlight {
-  color: #D4FF24;
-}
-
-.hero-subtext {
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: #9ca3af;
-  margin: 0;
-}
-
-/* ================= CARD DO FORMULÁRIO PADRÃO (+SERVE) ================= */
+/* ================= CARD DO FORMULÁRIO MOBILE (+SERVE) ================= */
 .form-card-container {
   background: #070a10;
   border: 1px solid rgba(212, 255, 36, 0.28);
   border-radius: 16px;
-  padding: 18px 16px;
-  margin-bottom: 20px;
-}
-
-@media (min-width: 768px) {
-  .form-card-container {
-    padding: 22px 22px;
-  }
+  padding: 14px 12px;
 }
 
 .selected-pro-card-banner {
@@ -1074,39 +1085,39 @@ function reportIssue() {
   background: rgba(212, 255, 36, 0.08);
   border: 1px solid rgba(212, 255, 36, 0.35);
   border-radius: 12px;
-  padding: 10px 12px;
-  margin-bottom: 16px;
+  padding: 9px 10px;
+  margin-bottom: 12px;
 }
 
 .selected-pro-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .selected-pro-img {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #D4FF24;
 }
 
 .selected-headline-tag {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
   color: #D4FF24;
 }
 
 .selected-name-title {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #ffffff;
   margin: 1px 0;
 }
 
 .selected-spec-text {
-  font-size: 11.5px;
+  font-size: 11px;
   color: #9ca3af;
   margin: 0;
 }
@@ -1115,111 +1126,179 @@ function reportIssue() {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #d1d5db;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 5px 9px;
+  border-radius: 7px;
   cursor: pointer;
 }
 
-/* Campos do Formulário */
 .form-fields-grid {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 11px;
 }
 
 .form-section-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .section-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .field-label-clean {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 13.5px;
+  gap: 5px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #ffffff;
 }
 
 .label-neon-icon {
   color: #D4FF24;
-  font-size: 17px;
+  font-size: 15px;
 }
 
-/* Seletor Integrado de Modalidade */
-.integrated-role-selector {
+/* Seletor Hierárquico de Profissional (Eventos | Casa | Limpeza) */
+.pro-selector-showcase-card {
+  background: #0a0e17;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  padding: 12px 10px;
+}
+
+.pro-selector-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+}
+
+.macro-group-pills {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  background: #0b0f17;
-  padding: 5px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-@media (max-width: 520px) {
-  .integrated-role-selector {
-    display: flex;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .integrated-role-selector::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.role-tab-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #9ca3af;
-  border-radius: 9px;
-  padding: 8px 10px;
-  font-size: 12px;
+.macro-pill-btn {
+  background: #0d121d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 7px 6px;
+  font-size: 11.5px;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  white-space: nowrap;
+  text-align: center;
   cursor: pointer;
   transition: all 0.16s ease;
 }
 
-.role-tab-btn.active {
-  background: rgba(212, 255, 36, 0.14);
-  border-color: rgba(212, 255, 36, 0.45);
-  color: #D4FF24;
+.macro-pill-btn.active {
+  background: #f1f5f9;
+  border-color: #ffffff;
+  color: #05070b;
   font-weight: 800;
 }
 
-.role-tab-icon {
-  font-size: 14px;
+.pro-selector-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 10px 0;
 }
 
-/* Atalhos rápidos Hoje / Amanhã */
+.pro-subcards-carousel-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.subcard-nav-arrow {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.pro-subcards-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  min-width: 0;
+}
+
+.pro-subcard-item {
+  background: #0d121d;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #cbd5e1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.pro-subcard-item.active {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1.5px solid #D4FF24;
+  color: #ffffff;
+}
+
+.pro-subcard-icon {
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.pro-subcard-item.active .pro-subcard-icon {
+  color: #D4FF24;
+}
+
+.pro-subcard-label {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pro-subcard-item.active .pro-subcard-label {
+  font-weight: 800;
+  color: #ffffff;
+}
+
 .quick-date-links {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .tiny-date-shortcut {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 99px;
   cursor: pointer;
 }
@@ -1230,45 +1309,48 @@ function reportIssue() {
   color: #D4FF24;
 }
 
-/* Grade de Data, Início e Fim (Fiel à imagem de referência) */
+/* Grade de Data, Início e Fim Mobile */
 .precise-datetime-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .precise-datetime-grid .date-col {
   grid-column: span 2;
 }
 
-@media (min-width: 600px) {
-  .precise-datetime-grid {
-    grid-template-columns: 1.35fr 1fr 1fr;
-  }
-  .precise-datetime-grid .date-col {
-    grid-column: span 1;
-  }
-}
-
-/* Campos em Caixa Padrão (+SERVE) */
 .boxed-field {
   background: #0b0f17;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 9px 12px;
+  border-radius: 11px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: border-color 0.18s;
+  gap: 8px;
 }
 
-.boxed-field:focus-within {
-  border-color: rgba(212, 255, 36, 0.55);
+.clickable-date-trigger {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.boxed-date-display {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.date-trigger-chevron {
+  color: #9ca3af;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .boxed-icon {
   color: #D4FF24;
-  font-size: 18px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
@@ -1280,9 +1362,12 @@ function reportIssue() {
 }
 
 .boxed-label {
-  font-size: 10.5px;
+  font-size: 10px;
   color: #9ca3af;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .boxed-input,
@@ -1291,7 +1376,7 @@ function reportIssue() {
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 700;
   width: 100%;
   padding: 0;
@@ -1304,35 +1389,27 @@ function reportIssue() {
 }
 
 .duration-helper-bar {
-  font-size: 11.5px;
+  font-size: 11px;
   color: #9ca3af;
-  padding-left: 2px;
 }
 
 .duration-helper-bar strong {
   color: #e5e7eb;
 }
 
-/* Duas colunas para Quantidade & Tipo de Evento */
+/* 2 Colunas Lado a Lado no Mobile para Quantidade e Tipo de Serviço */
 .two-cols-boxed-row {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-@media (min-width: 540px) {
-  .two-cols-boxed-row {
-    grid-template-columns: 1fr 1fr;
-  }
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 
 .location-desc-stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* Campo de Valor Oferecido (Piso R$ 50) */
 .price-boxed-field {
   justify-content: space-between;
 }
@@ -1345,16 +1422,16 @@ function reportIssue() {
 .price-left-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .currency-circle {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 1.5px solid #D4FF24;
   color: #D4FF24;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -1365,11 +1442,11 @@ function reportIssue() {
 .price-value-line {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: 2px;
 }
 
 .rs-prefix {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   color: #ffffff;
 }
@@ -1379,14 +1456,14 @@ function reportIssue() {
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
-  width: 58px;
+  width: 52px;
   padding: 0;
 }
 
 .rs-decimals {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #9ca3af;
 }
@@ -1394,17 +1471,17 @@ function reportIssue() {
 .price-stepper-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .step-circle-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1419,20 +1496,20 @@ function reportIssue() {
   background: rgba(245, 158, 11, 0.12);
   border: 1px solid rgba(245, 158, 11, 0.35);
   color: #fbbf24;
-  font-size: 12px;
-  padding: 8px 12px;
-  border-radius: 10px;
+  font-size: 11px;
+  padding: 7px 10px;
+  border-radius: 9px;
 }
 
 .price-presets-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .preset-hint {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #9ca3af;
 }
 
@@ -1440,9 +1517,9 @@ function reportIssue() {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #9ca3af;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 4px 9px;
   border-radius: 99px;
   cursor: pointer;
 }
@@ -1453,38 +1530,37 @@ function reportIssue() {
   color: #D4FF24;
 }
 
-/* Botão Principal */
 .primary-search-button {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 12px;
   background: #D4FF24;
   color: #050800;
   border: none;
   border-radius: 12px;
-  height: 50px;
-  font-size: 13.5px;
+  height: 46px;
+  font-size: 12.5px;
   font-weight: 900;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(212, 255, 36, 0.25);
+  box-shadow: 0 4px 16px rgba(212, 255, 36, 0.24);
 }
 
 .trust-footer-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  padding-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .trust-shield-icon {
   color: #D4FF24;
-  font-size: 22px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -1494,210 +1570,71 @@ function reportIssue() {
 }
 
 .trust-copy strong {
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: #ffffff;
 }
 
 .trust-copy span {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: #9ca3af;
 }
 
-/* ================= COLUNA DIREITA: DESTAQUES ================= */
-.highlights-card {
-  background: #070a10;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 20px;
-}
-
-.highlights-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.highlight-star-icon {
-  color: #D4FF24;
-  font-size: 20px;
-}
-
-.highlights-title {
-  font-size: 17px;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0;
-}
-
-.highlights-subtitle {
-  font-size: 12px;
-  color: #9ca3af;
-  margin: 4px 0 14px;
-}
-
-.highlights-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.highlight-row-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-}
-
-.rank-ribbon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.rank-1 {
-  background: rgba(245, 158, 11, 0.2);
-  border: 1px solid #f59e0b;
-  color: #fbbf24;
-}
-
-.rank-2 {
-  background: rgba(156, 163, 175, 0.2);
-  border: 1px solid #9ca3af;
-  color: #e5e7eb;
-}
-
-.rank-3 {
-  background: rgba(180, 83, 9, 0.2);
-  border: 1px solid #d97706;
-  color: #fdba74;
-}
-
-.highlight-avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.highlight-details {
-  flex: 1;
-}
-
-.name-verified-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.pro-name {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.verified-badge {
-  color: #4ade80;
-  font-size: 15px;
-}
-
-.pro-stats-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  margin-top: 2px;
-}
-
-.star-rating {
-  color: #facc15;
-  font-weight: 700;
-}
-
-.services-count {
-  color: #9ca3af;
-}
-
-.view-all-highlights-link {
-  width: 100%;
-  margin-top: 14px;
-  background: transparent;
-  border: 1px solid rgba(212, 255, 36, 0.3);
-  border-radius: 10px;
-  height: 40px;
-  color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-/* ================= LISTA DE DISPONÍVEIS ================= */
-.available-section-row {
-  margin-top: 8px;
-}
-
+/* ================= LISTA DE PROFISSIONAIS DISPONÍVEIS MOBILE ================= */
 .section-heading-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.heading-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .section-icon-neon {
   color: #D4FF24;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .available-section-title {
-  font-size: 18px;
+  font-size: 15.5px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
+}
+
+.pros-count-badge {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 99px;
 }
 
 .available-pros-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pro-profile-card {
   background: #070a10;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-@media (min-width: 768px) {
-  .pro-profile-card {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+  gap: 10px;
 }
 
 .card-left-block {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
+  gap: 10px;
   cursor: pointer;
 }
 
@@ -1707,21 +1644,26 @@ function reportIssue() {
 }
 
 .pro-main-avatar {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .online-dot {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 11px;
-  height: 11px;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #22c55e;
   border: 2px solid #070a10;
+}
+
+.pro-core-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .pro-name-verified {
@@ -1731,18 +1673,30 @@ function reportIssue() {
 }
 
 .pro-full-name {
-  font-size: 15.5px;
+  font-size: 14px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
 }
 
+.verified-badge {
+  color: #4ade80;
+  font-size: 14px;
+}
+
+.pro-base-price-tag {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: #D4FF24;
+}
+
 .pro-stats-strip {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  margin: 3px 0 6px;
+  gap: 5px;
+  font-size: 11.5px;
+  margin: 2px 0 5px;
 }
 
 .rating-val {
@@ -1757,54 +1711,54 @@ function reportIssue() {
 .pro-pills-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
 }
 
 .pro-pill {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 11px;
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 10px;
   color: #d1d5db;
 }
 
-.card-meta-block {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.meta-line {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.meta-icon {
-  color: #D4FF24;
+.card-mobile-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .view-profile-btn {
-  width: 100%;
-  background: transparent;
-  border: 1px solid rgba(212, 255, 36, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  border-radius: 10px;
-  padding: 9px 16px;
-  font-size: 12.5px;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 11.5px;
   font-weight: 700;
-  display: flex;
+  cursor: pointer;
+}
+
+.quick-select-pro-btn {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.45);
+  color: #D4FF24;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
 }
 
 .load-more-container {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .load-more-btn {
@@ -1812,84 +1766,64 @@ function reportIssue() {
   background: #070a10;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  height: 42px;
+  height: 38px;
   color: #d1d5db;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
 }
 
-/* ================= SUPORTE ================= */
-.support-banner-row {
-  margin-top: 20px;
-}
-
+/* ================= SUPORTE MOBILE ================= */
 .support-banner-box {
   background: #070a10;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
-  padding: 16px;
+  padding: 12px 14px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-@media (min-width: 768px) {
-  .support-banner-box {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
 }
 
 .support-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .headphone-icon-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: rgba(212, 255, 36, 0.1);
   color: #D4FF24;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .support-title {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 800;
   margin: 0;
 }
 
 .support-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: #9ca3af;
-  margin: 2px 0 0;
+  margin: 1px 0 0;
 }
 
-.support-cta-btn {
-  width: 100%;
-  background: transparent;
-  border: 1px solid rgba(212, 255, 36, 0.4);
-  color: #ffffff;
-  border-radius: 10px;
-  padding: 9px 16px;
-  font-size: 12.5px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
+.support-chevron {
+  color: #D4FF24;
+  font-size: 17px;
 }
 
 /* ================= MODAIS ================= */
@@ -1902,35 +1836,35 @@ function reportIssue() {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .sheet-title {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
 }
 
 .sheet-subtitle {
-  font-size: 12.5px;
+  font-size: 12px;
   color: #9ca3af;
-  margin: 3px 0 0;
+  margin: 2px 0 0;
 }
 
 .btn-close-modal {
   background: rgba(255, 255, 255, 0.06);
   border: none;
   color: #9ca3af;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
 }
 
 .pro-modal-category {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   color: #D4FF24;
   text-transform: uppercase;
@@ -1939,13 +1873,13 @@ function reportIssue() {
 .pro-modal-profile-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .pro-modal-avatar-big {
-  width: 68px;
-  height: 68px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #D4FF24;
@@ -1953,7 +1887,7 @@ function reportIssue() {
 
 .pro-modal-stats-summary {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
 }
 
@@ -1961,7 +1895,7 @@ function reportIssue() {
   background: #111622;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
-  padding: 8px;
+  padding: 7px;
   flex: 1;
   text-align: center;
   display: flex;
@@ -1969,58 +1903,58 @@ function reportIssue() {
 }
 
 .stat-val {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: #ffffff;
 }
 
 .stat-lbl {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #9ca3af;
 }
 
 .modal-section-title {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #d1d5db;
-  margin: 14px 0 6px;
+  margin: 12px 0 5px;
 }
 
 .pro-bio-text {
-  font-size: 13px;
+  font-size: 12.5px;
   color: #9ca3af;
-  line-height: 1.45;
+  line-height: 1.4;
   margin: 0;
 }
 
 .badges-row-flex {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .badge-modal-pill {
   background: rgba(212, 255, 36, 0.1);
   border: 1px solid rgba(212, 255, 36, 0.3);
   color: #D4FF24;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 99px;
 }
 
 .review-modal-box {
   background: #111622;
   border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 8px;
+  padding: 9px;
+  margin-bottom: 7px;
 }
 
 .review-top-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 4px;
+  font-size: 11.5px;
+  margin-bottom: 3px;
 }
 
 .review-stars {
@@ -2028,25 +1962,25 @@ function reportIssue() {
 }
 
 .review-comment-p {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #9ca3af;
   margin: 0;
 }
 
 .hire-now-modal-btn {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 14px;
   background: #D4FF24;
   color: #050800;
   border: none;
-  border-radius: 12px;
-  height: 48px;
-  font-size: 13.5px;
+  border-radius: 11px;
+  height: 46px;
+  font-size: 13px;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
 }
 
@@ -2055,33 +1989,33 @@ function reportIssue() {
 }
 
 .success-check-circle {
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: rgba(212, 255, 36, 0.14);
   color: #D4FF24;
-  font-size: 36px;
+  font-size: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 6px auto 12px;
+  margin: 4px auto 10px;
 }
 
 .order-summary-box {
   background: #111622;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 14px;
-  margin: 16px 0;
+  padding: 12px;
+  margin: 14px 0;
   text-align: left;
 }
 
 .summary-line {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 12.5px;
-  padding: 6px 0;
+  gap: 8px;
+  font-size: 12px;
+  padding: 5px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -2091,10 +2025,10 @@ function reportIssue() {
 
 .sum-label {
   color: #9ca3af;
-  flex-shrink: 0;
 }
 
 .sum-val {
+  color: #ffffff;
   text-align: right;
 }
 
@@ -2109,28 +2043,30 @@ function reportIssue() {
 }
 
 .btn-primary-modal {
+  width: 100%;
   background: #D4FF24;
   color: #050800;
   border: none;
-  border-radius: 10px;
-  height: 46px;
-  font-size: 13.5px;
+  border-radius: 11px;
+  height: 44px;
+  font-size: 12.5px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
 }
 
 .btn-secondary-modal {
-  background: rgba(255, 255, 255, 0.06);
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  height: 44px;
-  font-size: 13px;
-  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  height: 42px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -2143,23 +2079,32 @@ function reportIssue() {
 .support-option-item {
   background: #111622;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 13px;
+  padding: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
 }
 
 .support-opt-icon {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  background: rgba(212, 255, 36, 0.12);
+  font-size: 19px;
+  flex-shrink: 0;
+}
+
+.support-opt-icon.whatsapp {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.support-opt-icon.shield {
+  background: rgba(212, 255, 36, 0.15);
   color: #D4FF24;
 }
 
@@ -2168,13 +2113,13 @@ function reportIssue() {
 }
 
 .support-opt-info h4 {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   margin: 0 0 2px;
 }
 
 .support-opt-info p {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #9ca3af;
   margin: 0;
 }

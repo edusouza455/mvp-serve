@@ -4,6 +4,7 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    alias: ['/home'],
     name: 'Landing',
     component: () => import('@/views/LandingPage.vue')
   },
@@ -18,24 +19,25 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/provider',
+    alias: ['/provider/dashboard'],
     name: 'ProviderDashboard',
     component: () => import('@/views/ProviderDashboard.vue')
   },
   {
     path: '/provider/leads',
-    redirect: '/provider?tab=leads'
+    redirect: '/provider?tab=inicio'
   },
   {
     path: '/provider/boosts',
-    redirect: '/provider?tab=boosts'
+    redirect: '/provider?tab=impulsos'
   },
   {
     path: '/provider/wallet',
-    redirect: '/provider?tab=wallet'
+    redirect: '/provider?tab=carteira'
   },
   {
     path: '/provider/profile',
-    redirect: '/provider?tab=profile'
+    redirect: '/provider?tab=perfil'
   },
   {
     path: '/:pathMatch(.*)*',
