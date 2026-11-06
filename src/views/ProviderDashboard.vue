@@ -42,34 +42,29 @@
         <!-- ================= TELA 1: MEUS SERVIÇOS (SUA AGENDA + PROPOSTAS NO MOBILE) ================= -->
         <section v-if="store.providerTab !== 'carteira' && store.providerTab !== 'perfil'" class="tab-pane">
 
-          <!-- BARRA COMPACTA DE IMPULSO MOBILE (1 TOQUE ABRE O MODAL DE IMPULSOS) -->
-          <div class="boost-trigger-banner" @click="store.boostModalOpen = true">
-            <div class="boost-banner-left">
-              <div class="boost-rocket-circle">
-                <ion-icon :icon="rocketOutline"></ion-icon>
-              </div>
-              <div class="boost-banner-copy">
-                <span class="boost-status-kicker">
-                  🚀 {{ store.activeBoost.name }} • {{ store.activeBoost.multiplier }} alcance
-                </span>
-                <h3 class="boost-banner-title">Impulsionar meu Perfil</h3>
-              </div>
+          <!-- BARRA MINIMALISTA DE IMPULSO MOBILE -->
+          <div class="boost-minimal-strip" @click="store.boostModalOpen = true">
+            <div class="boost-strip-info">
+              <span class="boost-strip-icon">🚀</span>
+              <span class="boost-strip-text">
+                <strong>{{ store.activeBoost.name }}</strong> • {{ store.activeBoost.multiplier }} alcance ativo
+              </span>
             </div>
-            <button type="button" class="boost-banner-cta">
-              <span>Impulsos</span>
+            <button type="button" class="boost-strip-btn">
+              <span>Turbinar</span>
               <ion-icon :icon="arrowForwardOutline"></ion-icon>
             </button>
           </div>
 
-          <!-- SELETOR SEGMENTADO MOBILE (PERMITE ALTERNAR RÁPIDO OU VER TUDO NO APP) -->
+          <!-- SELETOR SEGMENTADO MOBILE (PROPOSTAS PRIMEIRO, AGENDA DEPOIS) -->
           <div class="mobile-services-segmented">
             <button
               type="button"
               class="seg-pill-btn"
-              :class="{ active: servicesSubView === 'all' }"
-              @click="servicesSubView = 'all'"
+              :class="{ active: servicesSubView === 'propostas' }"
+              @click="servicesSubView = 'propostas'"
             >
-              <span>Agenda & Propostas</span>
+              <span>📋 Propostas ({{ filteredJobLeads.length }})</span>
             </button>
             <button
               type="button"
@@ -82,144 +77,14 @@
             <button
               type="button"
               class="seg-pill-btn"
-              :class="{ active: servicesSubView === 'propostas' }"
-              @click="servicesSubView = 'propostas'"
+              :class="{ active: servicesSubView === 'all' }"
+              @click="servicesSubView = 'all'"
             >
-              <span>📋 Propostas ({{ filteredJobLeads.length }})</span>
+              <span>Ver Tudo</span>
             </button>
           </div>
 
-          <!-- BLOCO 1: CARD "SUA AGENDA" (FIEL AO WIREFRAME E COMPACTO PARA MOBILE) -->
-          <div v-if="servicesSubView === 'all' || servicesSubView === 'agenda'" class="agenda-outer-card">
-            <div class="agenda-card-header">
-              <div>
-                <h2 class="agenda-main-title">Sua Agenda</h2>
-                <p class="agenda-sub-caption">Toque nos dias futuros para alternar Livre / Ocupado</p>
-              </div>
-              <span class="agenda-summary-badge">
-                {{ freeDaysInMonthCount }} livres • {{ busyDaysInMonthCount }} ocup.
-              </span>
-            </div>
-
-            <!-- CAIXA INTERNA DO CALENDÁRIO ("estou livre aos finde" + Calendário) -->
-            <div class="agenda-inner-box">
-              <!-- Botão / Chip de Disponibilidade Rápida ("estou livre aos finde") -->
-              <div class="weekend-preset-bar">
-                <button
-                  type="button"
-                  class="weekend-toggle-pill"
-                  :class="{ active: weekendOnlyMode }"
-                  @click="toggleWeekendPreset"
-                >
-                  <span class="status-dot" :class="{ on: weekendOnlyMode }"></span>
-                  <span class="finde-label">estou livre aos finde</span>
-                </button>
-
-                <button
-                  type="button"
-                  class="all-free-link"
-                  @click="markAllFutureFree"
-                >
-                  Liberar mês
-                </button>
-              </div>
-
-              <!-- Banner/Subtítulo fiel ao wireframe -->
-              <div class="agenda-wireframe-subtitle">
-                <span>CALENDÁRIO • DATAS FUTURAS, PASSADAS E DIAS LIVRES</span>
-              </div>
-
-              <!-- Navegação de Mês -->
-              <div class="agenda-month-nav">
-                <button
-                  type="button"
-                  class="agenda-nav-btn"
-                  @click="changeAgendaMonth(-1)"
-                  aria-label="Mês anterior"
-                >
-                  <ion-icon :icon="chevronBackOutline"></ion-icon>
-                </button>
-
-                <div class="agenda-month-label">
-                  <strong>{{ currentAgendaMonthName }}</strong>
-                  <span>{{ agendaYear }}</span>
-                </div>
-
-                <button
-                  type="button"
-                  class="agenda-nav-btn"
-                  @click="changeAgendaMonth(1)"
-                  aria-label="Próximo mês"
-                >
-                  <ion-icon :icon="chevronForwardOutline"></ion-icon>
-                </button>
-              </div>
-
-              <!-- Dias da Semana -->
-              <div class="agenda-weekdays-row">
-                <span
-                  v-for="(wd, i) in weekdays"
-                  :key="wd"
-                  class="agenda-wd-cell"
-                  :class="{ weekend: i === 0 || i === 6 }"
-                >
-                  {{ wd }}
-                </span>
-              </div>
-
-              <!-- Grade Compacta Mobile do Calendário (Datas Passadas, Futuras, Livres e Ocupadas) -->
-              <div class="agenda-days-grid">
-                <button
-                  v-for="cell in agendaCells"
-                  :key="cell.key"
-                  type="button"
-                  class="agenda-day-cell"
-                  :class="{
-                    empty: cell.empty,
-                    past: !cell.empty && cell.status === 'PAST',
-                    free: !cell.empty && cell.status === 'FREE',
-                    busy: !cell.empty && cell.status === 'BUSY',
-                    today: !cell.empty && cell.isToday
-                  }"
-                  :disabled="cell.empty"
-                  @click="toggleDayAvailability(cell)"
-                >
-                  <span v-if="!cell.empty" class="cell-day-num">{{ cell.day }}</span>
-                  <span
-                    v-if="!cell.empty"
-                    class="cell-status-dot"
-                    :class="cell.status.toLowerCase()"
-                  ></span>
-                </button>
-              </div>
-
-              <!-- Legenda Intuitiva do Calendário -->
-              <div class="agenda-legend-row">
-                <span class="legend-item">
-                  <i class="leg-dot free"></i> Livre
-                </span>
-                <span class="legend-item">
-                  <i class="leg-dot busy"></i> Ocupado / Serviço
-                </span>
-                <span class="legend-item">
-                  <i class="leg-dot past"></i> Passado
-                </span>
-              </div>
-            </div>
-
-            <!-- Botão Inferior Esquerdo (Conforme o wireframe "Sua Agenda") -->
-            <div class="agenda-bottom-action-row">
-              <button type="button" class="save-agenda-btn" @click="saveAgendaSettings">
-                <ion-icon :icon="checkmarkOutline"></ion-icon>
-                <span>Salvar Agenda</span>
-              </button>
-              <span class="agenda-helper-note">
-                Disponibilidade visível para clientes.
-              </span>
-            </div>
-          </div>
-
-          <!-- BLOCO 2: PROPOSTAS RECEBIDAS & SERVIÇOS CONFIRMADOS -->
+          <!-- ================= 1º BLOCO: PROPOSTAS RECEBIDAS & SERVIÇOS CONFIRMADOS (NO TOPO) ================= -->
           <div v-if="servicesSubView === 'all' || servicesSubView === 'propostas'" class="proposals-outer-card">
 
             <!-- 1. SERVIÇOS CONFIRMADOS / EM ANDAMENTO -->
@@ -227,7 +92,7 @@
               <div class="section-top-bar">
                 <div>
                   <h2 class="pane-title">Serviços Confirmados ({{ store.acceptedJobs.length }})</h2>
-                  <p class="pane-subtitle">Converse no chat e conclua para liberar o pagamento</p>
+                  <p class="pane-subtitle">Converse no chat e conclua para receber diretamente</p>
                 </div>
               </div>
 
@@ -252,7 +117,7 @@
                       <img :src="actJob.clientAvatar || 'https://i.pravatar.cc/150?img=32'" class="client-mini-avatar" alt="Cliente" />
                       <div>
                         <strong class="client-mini-name">{{ actJob.clientName || 'Cliente +SERVE' }}</strong>
-                        <span class="client-mini-val">Líquido (95%): {{ formatCurrency(actJob.budget * 0.95) }}</span>
+                        <span class="client-mini-val">Líquido estimado: {{ formatCurrency(actJob.budget * 0.90) }}</span>
                       </div>
                     </div>
 
@@ -282,9 +147,9 @@
               <div class="section-top-bar">
                 <div>
                   <h2 class="pane-title">Propostas Recebidas</h2>
-                  <p class="pane-subtitle">Solicitações compatíveis com sua agenda</p>
+                  <p class="pane-subtitle">Solicitações abertas aguardando sua resposta</p>
                 </div>
-                <span class="leads-counter-pill">{{ filteredJobLeads.length }} propostas</span>
+                <span class="leads-counter-pill">{{ filteredJobLeads.length }} disponíveis</span>
               </div>
 
               <div class="filter-pills-scroll">
@@ -362,6 +227,131 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- ================= 2º BLOCO: SUA AGENDA & CALENDÁRIO (LÁ EMBAIXO) ================= -->
+          <div v-if="servicesSubView === 'all' || servicesSubView === 'agenda'" class="agenda-outer-card">
+            <div class="agenda-card-header">
+              <div>
+                <h2 class="agenda-main-title">Sua Agenda</h2>
+                <p class="agenda-sub-caption">Defina os dias livres para receber novas solicitações</p>
+              </div>
+              <span class="agenda-summary-badge">
+                {{ freeDaysInMonthCount }} livres • {{ busyDaysInMonthCount }} ocupados
+              </span>
+            </div>
+
+            <!-- CAIXA INTERNA DO CALENDÁRIO ("estou livre aos finde" + Calendário) -->
+            <div class="agenda-inner-box">
+              <!-- Botão / Chip de Disponibilidade Rápida ("estou livre aos finde") -->
+              <div class="weekend-preset-bar">
+                <button
+                  type="button"
+                  class="weekend-toggle-pill"
+                  :class="{ active: weekendOnlyMode }"
+                  @click="toggleWeekendPreset"
+                >
+                  <span class="status-dot" :class="{ on: weekendOnlyMode }"></span>
+                  <span class="finde-label">estou livre aos finde</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="all-free-link"
+                  @click="markAllFutureFree"
+                >
+                  Liberar mês
+                </button>
+              </div>
+
+              <!-- Navegação de Mês -->
+              <div class="agenda-month-nav">
+                <button
+                  type="button"
+                  class="agenda-nav-btn"
+                  @click="changeAgendaMonth(-1)"
+                  aria-label="Mês anterior"
+                >
+                  <ion-icon :icon="chevronBackOutline"></ion-icon>
+                </button>
+
+                <div class="agenda-month-label">
+                  <strong>{{ currentAgendaMonthName }}</strong>
+                  <span>{{ agendaYear }}</span>
+                </div>
+
+                <button
+                  type="button"
+                  class="agenda-nav-btn"
+                  @click="changeAgendaMonth(1)"
+                  aria-label="Próximo mês"
+                >
+                  <ion-icon :icon="chevronForwardOutline"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Dias da Semana -->
+              <div class="agenda-weekdays-row">
+                <span
+                  v-for="(wd, i) in weekdays"
+                  :key="wd"
+                  class="agenda-wd-cell"
+                  :class="{ weekend: i === 0 || i === 6 }"
+                >
+                  {{ wd }}
+                </span>
+              </div>
+
+              <!-- Grade Compacta Mobile do Calendário -->
+              <div class="agenda-days-grid">
+                <button
+                  v-for="cell in agendaCells"
+                  :key="cell.key"
+                  type="button"
+                  class="agenda-day-cell"
+                  :class="{
+                    empty: cell.empty,
+                    past: !cell.empty && cell.status === 'PAST',
+                    free: !cell.empty && cell.status === 'FREE',
+                    busy: !cell.empty && cell.status === 'BUSY',
+                    today: !cell.empty && cell.isToday
+                  }"
+                  :disabled="cell.empty"
+                  @click="toggleDayAvailability(cell)"
+                >
+                  <span v-if="!cell.empty" class="cell-day-num">{{ cell.day }}</span>
+                  <span
+                    v-if="!cell.empty"
+                    class="cell-status-dot"
+                    :class="cell.status.toLowerCase()"
+                  ></span>
+                </button>
+              </div>
+
+              <!-- Legenda Intuitiva do Calendário -->
+              <div class="agenda-legend-row">
+                <span class="legend-item">
+                  <i class="leg-dot free"></i> Livre
+                </span>
+                <span class="legend-item">
+                  <i class="leg-dot busy"></i> Ocupado
+                </span>
+                <span class="legend-item">
+                  <i class="leg-dot past"></i> Passado
+                </span>
+              </div>
+            </div>
+
+            <!-- Botão Inferior Esquerdo (Conforme o wireframe "Sua Agenda") -->
+            <div class="agenda-bottom-action-row">
+              <button type="button" class="save-agenda-btn" @click="saveAgendaSettings">
+                <ion-icon :icon="checkmarkOutline"></ion-icon>
+                <span>Salvar Agenda</span>
+              </button>
+              <span class="agenda-helper-note">
+                Disponibilidade visível para contratantes.
+              </span>
+            </div>
           </div>
         </section>
 
@@ -1307,67 +1297,61 @@ function handleResetDemo() {
   gap: 12px;
 }
 
-/* ================= BANNER COMPACTO DE IMPULSOS MOBILE ================= */
-.boost-trigger-banner {
-  background: linear-gradient(135deg, rgba(212, 255, 36, 0.12) 0%, rgba(11, 15, 24, 0.95) 100%);
-  border: 1px solid rgba(212, 255, 36, 0.38);
-  border-radius: 14px;
-  padding: 10px 12px;
+/* ================= BARRA MINIMALISTA DE IMPULSO MOBILE ================= */
+.boost-minimal-strip {
+  background: linear-gradient(90deg, rgba(212, 255, 36, 0.08) 0%, rgba(11, 15, 24, 0.95) 100%);
+  border: 1px solid rgba(212, 255, 36, 0.28);
+  border-radius: 10px;
+  padding: 7px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.boost-banner-left {
+.boost-minimal-strip:hover {
+  border-color: rgba(212, 255, 36, 0.5);
+  background: linear-gradient(90deg, rgba(212, 255, 36, 0.14) 0%, rgba(11, 15, 24, 0.98) 100%);
+}
+
+.boost-strip-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   min-width: 0;
 }
 
-.boost-rocket-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: rgba(212, 255, 36, 0.18);
-  color: #D4FF24;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
+.boost-strip-icon {
+  font-size: 14px;
 }
 
-.boost-status-kicker {
-  display: block;
+.boost-strip-text {
+  font-size: 11px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boost-strip-text strong {
+  color: #D4FF24;
+}
+
+.boost-strip-btn {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
+  border-radius: 7px;
+  padding: 4px 8px;
   font-size: 10px;
   font-weight: 800;
-  color: #D4FF24;
-}
-
-.boost-banner-title {
-  font-size: 13.5px;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 1px 0 0;
-}
-
-.boost-banner-cta {
-  background: #D4FF24;
-  color: #05070b;
-  border: none;
-  border-radius: 9px;
-  padding: 7px 10px;
-  font-size: 11px;
-  font-weight: 900;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  gap: 3px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* ================= SELETOR SEGMENTADO MOBILE (AGENDA vs PROPOSTAS) ================= */
@@ -1568,12 +1552,12 @@ function handleResetDemo() {
 }
 
 .agenda-day-cell {
-  height: 36px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  height: 33px;
+  border-radius: 7px;
+  background: #080c14;
   border: 1px solid rgba(255, 255, 255, 0.06);
   color: #cbd5e1;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   display: flex;
   flex-direction: column;
@@ -1582,6 +1566,7 @@ function handleResetDemo() {
   gap: 2px;
   padding: 0;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .agenda-day-cell.empty {
@@ -1591,25 +1576,27 @@ function handleResetDemo() {
 }
 
 .agenda-day-cell.past {
-  opacity: 0.35;
-  color: #64748b;
-  background: rgba(255, 255, 255, 0.015);
+  opacity: 0.25;
+  color: #475569;
+  background: transparent;
+  border-color: transparent;
 }
 
 .agenda-day-cell.free {
-  background: rgba(212, 255, 36, 0.13);
-  border-color: rgba(212, 255, 36, 0.5);
-  color: #ffffff;
+  background: rgba(212, 255, 36, 0.08);
+  border-color: rgba(212, 255, 36, 0.4);
+  color: #D4FF24;
 }
 
 .agenda-day-cell.busy {
-  background: rgba(249, 115, 22, 0.16);
-  border-color: rgba(249, 115, 22, 0.55);
-  color: #fdba74;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(251, 146, 60, 0.3);
+  color: #e2e8f0;
 }
 
 .agenda-day-cell.today {
-  box-shadow: 0 0 0 1.5px #ffffff;
+  box-shadow: 0 0 0 1.5px #D4FF24;
+  color: #ffffff;
 }
 
 .cell-status-dot {
@@ -1620,6 +1607,7 @@ function handleResetDemo() {
 
 .cell-status-dot.free {
   background: #D4FF24;
+  box-shadow: 0 0 4px #D4FF24;
 }
 
 .cell-status-dot.busy {
@@ -1627,7 +1615,7 @@ function handleResetDemo() {
 }
 
 .cell-status-dot.past {
-  background: #475569;
+  background: #334155;
 }
 
 .agenda-legend-row {
