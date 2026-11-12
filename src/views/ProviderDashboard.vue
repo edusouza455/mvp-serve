@@ -264,6 +264,11 @@
                 </button>
               </div>
 
+              <!-- Subtítulo fiel ao wireframe do usuário -->
+              <div class="agenda-wireframe-subtitle">
+                <span>CALENDÁRIO • DATAS FUTURAS, PASSADAS E DIAS LIVRES</span>
+              </div>
+
               <!-- Navegação de Mês -->
               <div class="agenda-month-nav">
                 <button

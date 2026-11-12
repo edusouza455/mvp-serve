@@ -35,81 +35,103 @@
         <!-- CARD DO FORMULÁRIO MOBILE (+SERVE) -->
         <div id="form-event-card" class="form-card-container">
           
-          <!-- BANNER QUANDO HÁ UM PROFISSIONAL SELECIONADO -->
-          <div v-if="store.selectedProfessional" class="selected-pro-card-banner">
-            <div class="selected-pro-left">
+          <!-- BANNER QUANDO HÁ UM PROFISSIONAL SELECIONADO (COM STATUS DA AGENDA) -->
+          <div v-if="store.selectedProfessional" class="selected-pro-card-banner" :class="{ 'pro-busy-alert': !isSelectedProFreeOnDate }">
+            <div class="selected-pro-left" @click="openProfileModal(store.selectedProfessional)">
               <img :src="store.selectedProfessional.avatar" :alt="store.selectedProfessional.nome" class="selected-pro-img" />
               <div class="selected-pro-meta">
-                <span class="selected-headline-tag">CONTRATAÇÃO DIRETA</span>
+                <div class="selected-top-tags">
+                  <span class="selected-headline-tag">SELECIONADO</span>
+                  <span
+                    class="pro-date-availability-tag"
+                    :class="isSelectedProFreeOnDate ? 'free' : 'busy'"
+                  >
+                    {{ isSelectedProFreeOnDate ? '✓ Livre na data' : '⚠️ Ocupado na data' }}
+                  </span>
+                </div>
                 <h3 class="selected-name-title">{{ store.selectedProfessional.nome }}</h3>
-                <p class="selected-spec-text">{{ store.selectedProfessional.especialidade }} • ★ {{ store.selectedProfessional.nota }}</p>
+                <p class="selected-spec-text">
+                  <span v-if="isSelectedProFreeOnDate" class="text-green-avail">✓ Disponível para {{ formattedDateDisplay }}</span>
+                  <span v-else class="text-amber-busy">Toque para ver os dias livres na agenda</span>
+                </p>
               </div>
             </div>
-            <button type="button" class="clear-selected-btn" @click="store.clearSelectedProfessional">
-              Trocar
-            </button>
+            <div class="selected-right-actions">
+              <button type="button" class="view-agenda-selected-btn" @click="openProfileModal(store.selectedProfessional)">
+                📅 Agenda
+              </button>
+              <button type="button" class="clear-selected-btn" @click="store.clearSelectedProfessional">
+                Trocar
+              </button>
+            </div>
           </div>
 
           <div class="form-fields-grid">
 
-            <!-- 1. SELETOR INTUITIVO DE PROFISSIONAL (EVENTOS | CASA | LIMPEZA + CARDS) -->
+            <!-- 1. SELETOR INTUITIVO DE PROFISSIONAL (BUSCA, MACRO-CATEGORIAS E GRADE 3x2) -->
             <div class="pro-selector-showcase-card">
-              <h3 class="pro-selector-heading">Qual profissional você precisa?</h3>
+              <div class="pro-selector-header-row">
+                <h3 class="pro-selector-heading">Profissional</h3>
 
-              <!-- Abas de Macro-Categoria (Eventos | Casa | Limpeza) -->
+                <div class="pro-search-input-wrap">
+                  <ion-icon :icon="searchOutline" class="search-micro-icon"></ion-icon>
+                  <input
+                    type="text"
+                    v-model="searchProfessionQuery"
+                    placeholder="Buscar profissional..."
+                    class="pro-search-input"
+                  />
+                  <button
+                    v-if="searchProfessionQuery"
+                    type="button"
+                    class="clear-search-btn"
+                    @click="searchProfessionQuery = ''"
+                  >✕</button>
+                </div>
+              </div>
+
+              <!-- Abas de Macro-Categoria (Eventos | Casa | Limpeza | Saúde e Bem-estar | Aulas | Tecnologia) -->
               <div class="macro-group-pills">
                 <button
                   v-for="grp in professionGroups"
                   :key="grp.id"
                   type="button"
                   class="macro-pill-btn"
-                  :class="{ active: selectedGroupName === grp.id }"
+                  :class="{ active: selectedGroupName === grp.id && !searchProfessionQuery }"
                   @click="selectMacroGroup(grp.id)"
                 >
                   {{ grp.label }}
                 </button>
               </div>
 
-              <!-- Linha divisória sutil -->
-              <div class="pro-selector-divider"></div>
-
-              <!-- Grade de Profissões da Macro-Categoria (Setas só aparecem se houver mais de 3 profissões) -->
-              <div class="pro-subcards-carousel-wrap">
+              <!-- Grade de Profissões (3 cards no topo, expansível com seta para ver o resto) -->
+              <div class="pro-subcards-grid">
                 <button
-                  v-if="hasMoreProfessionsInGroup"
+                  v-for="profName in displayedGroupProfessions"
+                  :key="profName"
                   type="button"
-                  class="subcard-nav-arrow left"
-                  @click="stepProfession(-1)"
-                  aria-label="Profissão anterior"
+                  class="pro-subcard-item"
+                  :class="{ active: selectedCategoryName === profName }"
+                  @click="chooseProfession(profName)"
                 >
-                  <ion-icon :icon="chevronBackOutline"></ion-icon>
+                  <ion-icon
+                    :icon="getCategoryIcon(CATEGORY_CONFIGS[profName]?.icon)"
+                    class="pro-subcard-icon"
+                  ></ion-icon>
+                  <span class="pro-subcard-label">{{ CATEGORY_CONFIGS[profName]?.label || profName }}</span>
                 </button>
+              </div>
 
-                <div class="pro-subcards-grid">
-                  <button
-                    v-for="profName in visibleGroupProfessions"
-                    :key="profName"
-                    type="button"
-                    class="pro-subcard-item"
-                    :class="{ active: selectedCategoryName === profName }"
-                    @click="setCategory(profName)"
-                  >
-                    <ion-icon
-                      :icon="getCategoryIcon(CATEGORY_CONFIGS[profName]?.icon)"
-                      class="pro-subcard-icon"
-                    ></ion-icon>
-                    <span class="pro-subcard-label">{{ profName }}</span>
-                  </button>
-                </div>
-
+              <!-- Seta / Botão Minimalista para Expandir / Recolher o resto dos cards -->
+              <div v-if="hasMoreThanThreeProfessions && !searchProfessionQuery" class="pro-expand-toggle-row">
                 <button
-                  v-if="hasMoreProfessionsInGroup"
                   type="button"
-                  class="subcard-nav-arrow right"
-                  @click="stepProfession(1)"
-                  aria-label="Próxima profissão"
+                  class="pro-expand-pill-btn"
+                  @click="isProfessionsExpanded = !isProfessionsExpanded"
+                  :title="isProfessionsExpanded ? 'Recolher' : 'Ver mais'"
                 >
-                  <ion-icon :icon="chevronForwardOutline"></ion-icon>
+                  <span>{{ isProfessionsExpanded ? 'Recolher' : 'Ver mais' }}</span>
+                  <ion-icon :icon="isProfessionsExpanded ? chevronUpOutline : chevronDownOutline" class="expand-chevron-icon"></ion-icon>
                 </button>
               </div>
             </div>
@@ -119,7 +141,7 @@
               <div class="section-label-row">
                 <label class="field-label-clean">
                   <ion-icon :icon="calendarOutline" class="label-neon-icon"></ion-icon>
-                  <span>Quando você precisa?</span>
+                  <span>Data e Horário</span>
                 </label>
                 <div class="quick-date-links">
                   <button
@@ -150,7 +172,7 @@
                 >
                   <ion-icon :icon="calendarOutline" class="boxed-icon"></ion-icon>
                   <div class="boxed-inner">
-                    <span class="boxed-label">Data do evento</span>
+                    <span class="boxed-label">Data</span>
                     <span class="boxed-date-display">{{ formattedDateDisplay }}</span>
                   </div>
                   <ion-icon :icon="chevronDownOutline" class="date-trigger-chevron"></ion-icon>
@@ -171,7 +193,7 @@
                 <div class="boxed-field time-col">
                   <ion-icon :icon="timeOutline" class="boxed-icon"></ion-icon>
                   <div class="boxed-inner">
-                    <span class="boxed-label">Fim (Até)</span>
+                    <span class="boxed-label">Término</span>
                     <input
                       type="time"
                       v-model="store.eventForm.horarioFim"
@@ -183,7 +205,7 @@
 
               <!-- Resumo automático de duração -->
               <div class="duration-helper-bar">
-                <span>⏱️ {{ formattedDateBR }} das <strong>{{ store.eventForm.horarioInicio }}</strong> às <strong>{{ store.eventForm.horarioFim }}</strong> ({{ calculatedDuration }})</span>
+                <span>⏱️ {{ formattedDateDisplay }} • {{ store.eventForm.horarioInicio }} às {{ store.eventForm.horarioFim }} ({{ calculatedDuration }})</span>
               </div>
             </div>
 
@@ -243,12 +265,12 @@
               </div>
             </div>
 
-            <!-- 5. VALOR OFERECIDO POR PROFISSIONAL (PISO MÍNIMO DE R$ 50,00) -->
+            <!-- 5. VALOR OFERECIDO POR PROFISSIONAL -->
             <div class="boxed-field price-boxed-field" :class="{ 'min-price-alert': minPriceWarningActive }">
               <div class="price-left-meta">
                 <div class="currency-circle">$</div>
                 <div class="boxed-inner">
-                  <span class="boxed-label">Valor por profissional (Mín: R$ 50)</span>
+                  <span class="boxed-label">Valor oferecido</span>
                   <div class="price-value-line">
                     <span class="rs-prefix">R$</span>
                     <input
@@ -270,12 +292,11 @@
             </div>
 
             <div v-if="minPriceWarningActive" class="min-floor-inline-notice">
-              ⚠️ O piso mínimo para contratação na plataforma é de <strong>R$ 50,00</strong>.
+              ⚠️ Mínimo: <strong>R$ 50,00</strong>.
             </div>
 
             <!-- Sugestões rápidas de valor da categoria -->
             <div class="price-presets-row">
-              <span class="preset-hint">Sugestões:</span>
               <button
                 v-for="p in activeConfig.prices"
                 :key="p"
@@ -299,10 +320,7 @@
           <!-- Rodapé de Confiança Compacto -->
           <div class="trust-footer-row">
             <ion-icon :icon="shieldCheckmarkOutline" class="trust-shield-icon"></ion-icon>
-            <div class="trust-copy">
-              <strong>Contrate com segurança</strong>
-              <span>Profissionais verificados • Pagamento protegido</span>
-            </div>
+            <span>Profissionais verificados • Pagamento direto</span>
           </div>
 
         </div>
@@ -312,9 +330,9 @@
           <div class="section-heading-row">
             <div class="heading-left">
               <ion-icon :icon="personOutline" class="section-icon-neon"></ion-icon>
-              <h2 class="available-section-title">{{ activeConfig.plural }} disponíveis</h2>
+              <h2 class="available-section-title">{{ activeConfig.plural }}</h2>
             </div>
-            <span class="pros-count-badge">{{ filteredAvailable.length }} online</span>
+            <span class="pros-count-badge">{{ filteredAvailable.length }} disponíveis</span>
           </div>
 
           <div class="available-pros-stack">
@@ -339,23 +357,46 @@
                   <div class="pro-stats-strip">
                     <span class="rating-val">★ {{ pro.nota }}</span>
                     <span class="dot-sep">•</span>
-                    <span class="jobs-val">{{ pro.servicos }} serviços</span>
+                    <span class="jobs-val">{{ pro.servicos }} serv.</span>
                     <span class="dot-sep">•</span>
                     <span class="jobs-val">{{ pro.exp }}</span>
                   </div>
 
+                  <!-- Status de Disponibilidade na Agenda do Garçom/Profissional -->
+                  <div class="pro-agenda-status-line">
+                    <span
+                      v-if="store.isProfessionalFreeOnDate(pro, store.eventForm.data)"
+                      class="pro-agenda-tag free"
+                    >
+                      <ion-icon :icon="checkmarkCircle"></ion-icon>
+                      <span>Livre na sua data</span>
+                    </span>
+                    <span
+                      v-else
+                      class="pro-agenda-tag busy"
+                    >
+                      <ion-icon :icon="closeCircleOutline"></ion-icon>
+                      <span>Ocupado nesta data</span>
+                    </span>
+                  </div>
+
                   <div class="pro-pills-row">
-                    <span v-for="tag in pro.tags" :key="tag" class="pro-pill">{{ tag }}</span>
+                    <span v-for="tag in pro.tags.slice(0, 2)" :key="tag" class="pro-pill">{{ tag }}</span>
                   </div>
                 </div>
               </div>
 
               <div class="card-mobile-actions">
                 <button type="button" class="view-profile-btn" @click="openProfileModal(pro)">
-                  <span>Ver perfil</span>
+                  <span>📅 Agenda</span>
                 </button>
-                <button type="button" class="quick-select-pro-btn" @click="selectAndScrollToForm(pro)">
-                  <span>Selecionar</span>
+                <button
+                  type="button"
+                  class="quick-select-pro-btn"
+                  :class="{ 'busy-warn': !store.isProfessionalFreeOnDate(pro, store.eventForm.data) }"
+                  @click="selectAndScrollToForm(pro)"
+                >
+                  <span>Escolher</span>
                   <ion-icon :icon="arrowForwardOutline"></ion-icon>
                 </button>
               </div>
@@ -364,7 +405,7 @@
 
           <div class="load-more-container" v-if="filteredAvailable.length > 3">
             <button type="button" class="load-more-btn" @click="toggleShowMorePros">
-              <span>{{ showAllPros ? 'Recolher lista' : `Ver mais ${activeConfig.plural.toLowerCase()} disponíveis` }}</span>
+              <span>{{ showAllPros ? 'Recolher' : 'Ver mais' }}</span>
               <ion-icon :icon="showAllPros ? chevronUpOutline : chevronDownOutline"></ion-icon>
             </button>
           </div>
@@ -378,7 +419,7 @@
             </div>
             <div class="support-text-meta">
               <h3 class="support-title">Precisa de ajuda?</h3>
-              <p class="support-subtitle">Suporte 24h para clientes e prestadores.</p>
+              <p class="support-subtitle">Suporte 24h no WhatsApp</p>
             </div>
           </div>
           <ion-icon :icon="arrowForwardOutline" class="support-chevron"></ion-icon>
@@ -421,6 +462,72 @@
             </div>
           </div>
 
+          <!-- SEÇÃO INTERATIVA: AGENDA & DIAS LIVRES DO GARÇOM / PROFISSIONAL -->
+          <div class="pro-modal-agenda-section">
+            <div class="modal-agenda-header">
+              <div class="modal-agenda-title-wrap">
+                <ion-icon :icon="calendarOutline" class="neon-icon"></ion-icon>
+                <h4 class="modal-section-title">Agenda de {{ activeModalPro.nome.split(' ')[0] }}</h4>
+              </div>
+              <span
+                class="agenda-status-pill"
+                :class="isModalProFreeOnDate ? 'free' : 'busy'"
+              >
+                {{ isModalProFreeOnDate ? '🟢 Livre na sua data' : '🔴 Ocupado na sua data' }}
+              </span>
+            </div>
+
+            <p class="modal-agenda-tip">
+              Toque em um <strong>dia verde (livre)</strong> para escolher a data da proposta:
+            </p>
+
+            <!-- Mini Calendário do Profissional (Novembro 2026) -->
+            <div class="modal-mini-calendar">
+              <div class="mini-cal-month-bar">
+                <strong>Novembro 2026</strong>
+                <span class="mini-cal-legend">
+                  <i class="dot-leg free"></i> Livre
+                  <i class="dot-leg busy"></i> Ocupado
+                </span>
+              </div>
+
+              <div class="mini-cal-weekdays">
+                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+              </div>
+
+              <div class="mini-cal-grid">
+                <button
+                  v-for="cell in modalProScheduleCells"
+                  :key="cell.key"
+                  type="button"
+                  class="mini-cal-day-cell"
+                  :class="{
+                    empty: cell.empty,
+                    free: !cell.empty && cell.status === 'FREE',
+                    busy: !cell.empty && cell.status === 'BUSY',
+                    past: !cell.empty && cell.status === 'PAST',
+                    selected: !cell.empty && cell.iso === store.eventForm.data
+                  }"
+                  :disabled="cell.empty || cell.status === 'PAST'"
+                  @click="pickFreeDateFromModalAgenda(cell)"
+                >
+                  <span v-if="!cell.empty">{{ cell.day }}</span>
+                  <span v-if="!cell.empty" class="mini-cell-dot" :class="cell.status.toLowerCase()"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Feedback da data selecionada na agenda -->
+            <div class="modal-agenda-feedback" :class="isModalProFreeOnDate ? 'success' : 'warn'">
+              <span v-if="isModalProFreeOnDate">
+                ✓ <strong>{{ activeModalPro.nome.split(' ')[0] }} está livre</strong> para {{ formattedDateDisplay }}! Pronto para propor.
+              </span>
+              <span v-else>
+                ⚠️ <strong>Indisponível em {{ formattedDateDisplay }}.</strong> Toque em um dia verde acima para liberar o envio da proposta.
+              </span>
+            </div>
+          </div>
+
           <div class="pro-modal-bio-section">
             <h4 class="modal-section-title">Sobre o Profissional</h4>
             <p class="pro-bio-text">{{ activeModalPro.bio || 'Profissional qualificado com documentação e antecedentes checados.' }}</p>
@@ -447,8 +554,14 @@
           </div>
 
           <div class="modal-pro-actions-footer">
-            <button class="hire-now-modal-btn" @click="hireFromModal(activeModalPro)">
-              <span>CONTRATAR {{ activeModalPro.nome.toUpperCase() }}</span>
+            <button
+              class="hire-now-modal-btn"
+              :class="{ 'disabled-btn': !isModalProFreeOnDate }"
+              :disabled="!isModalProFreeOnDate"
+              @click="hireFromModal(activeModalPro)"
+            >
+              <span v-if="isModalProFreeOnDate">ENVIAR PROPOSTA PARA {{ activeModalPro.nome.split(' ')[0].toUpperCase() }}</span>
+              <span v-else>ESCOLHA UMA DATA LIVRE NA AGENDA</span>
               <ion-icon :icon="arrowForwardOutline"></ion-icon>
             </button>
           </div>
@@ -467,8 +580,8 @@
           <div class="success-check-circle">
             <ion-icon :icon="checkmarkCircle"></ion-icon>
           </div>
-          <h2 class="sheet-title">Solicitação Publicada!</h2>
-          <p class="sheet-subtitle">{{ activeConfig.plural }} qualificados da sua região já receberam seu chamado.</p>
+          <h2 class="sheet-title">Pedido Enviado!</h2>
+          <p class="sheet-subtitle">Profissionais da região já receberam seu chamado.</p>
 
           <div class="order-summary-box">
             <div class="summary-line">
@@ -476,19 +589,19 @@
               <strong class="sum-val">{{ createdOrderData.categoria }} • {{ createdOrderData.tipoEvento }}</strong>
             </div>
             <div class="summary-line">
-              <span class="sum-label">Início e Fim:</span>
-              <span class="sum-val">{{ createdOrderData.data }} ({{ createdOrderData.horarioInicio }} às {{ createdOrderData.horarioFim }})</span>
+              <span class="sum-label">Horário:</span>
+              <span class="sum-val">{{ createdOrderData.data }} • {{ createdOrderData.horarioInicio }} às {{ createdOrderData.horarioFim }}</span>
             </div>
             <div class="summary-line">
               <span class="sum-label">Local:</span>
               <span class="sum-val">{{ createdOrderData.local || 'Boa Vista - RR' }}</span>
             </div>
             <div v-if="createdOrderData.descricao" class="summary-line">
-              <span class="sum-label">Descrição:</span>
+              <span class="sum-label">Detalhes:</span>
               <span class="sum-val">{{ createdOrderData.descricao }}</span>
             </div>
             <div class="summary-line">
-              <span class="sum-label">Valor Oferecido:</span>
+              <span class="sum-label">Valor:</span>
               <strong class="sum-val neon-color">R$ {{ createdOrderData.valorOferecido }},00</strong>
             </div>
           </div>
@@ -496,10 +609,10 @@
           <div class="modal-buttons-stack">
             <button class="btn-primary-modal" @click="openChatFromSuccess">
               <ion-icon :icon="chatbubbleOutline"></ion-icon>
-              <span>Abrir Chat com Profissional</span>
+              <span>Abrir Chat</span>
             </button>
             <button class="btn-secondary-modal" @click="viewOrdersFromSuccess">
-              <span>Acompanhar em Meus Pedidos</span>
+              <span>Ver Pedidos</span>
             </button>
           </div>
         </ion-content>
@@ -596,6 +709,7 @@ import {
   arrowForwardOutline,
   shieldCheckmarkOutline,
   checkmarkCircle,
+  closeCircleOutline,
   locationOutline,
   headsetOutline,
   flashOutline,
@@ -605,7 +719,21 @@ import {
   wineOutline,
   restaurantOutline,
   flameOutline,
-  shirtOutline
+  shirtOutline,
+  searchOutline,
+  shieldOutline,
+  idCardOutline,
+  cameraOutline,
+  colorPaletteOutline,
+  keyOutline,
+  leafOutline,
+  fitnessOutline,
+  cutOutline,
+  heartOutline,
+  schoolOutline,
+  laptopOutline,
+  phonePortraitOutline,
+  musicalNotesOutline
 } from 'ionicons/icons';
 import { useAppStore, CATEGORY_CONFIGS, PROFESSION_GROUPS } from '@/stores/useAppStore';
 import CalendarModal from '@/components/CalendarModal.vue';
@@ -630,27 +758,41 @@ const createdOrderData = ref(null);
 const professionGroups = PROFESSION_GROUPS;
 const selectedGroupName = ref('Eventos');
 const selectedCategoryName = ref('Garçom');
-const groupPageStartIndex = ref(0);
+const isProfessionsExpanded = ref(false);
+const searchProfessionQuery = ref('');
 const showAllPros = ref(false);
 const activeDateShortcut = ref('today');
 
 const activeGroupProfessions = computed(() => {
+  const query = searchProfessionQuery.value.trim().toLowerCase();
+  if (query) {
+    const allKeys = Object.keys(CATEGORY_CONFIGS);
+    return allKeys.filter(k => {
+      const conf = CATEGORY_CONFIGS[k];
+      return (
+        k.toLowerCase().includes(query) ||
+        (conf.label && conf.label.toLowerCase().includes(query)) ||
+        (conf.group && conf.group.toLowerCase().includes(query)) ||
+        (conf.plural && conf.plural.toLowerCase().includes(query))
+      );
+    });
+  }
   const found = professionGroups.find(g => g.id === selectedGroupName.value);
   return found ? found.items : professionGroups[0].items;
 });
 
-const hasMoreProfessionsInGroup = computed(() => {
+const hasMoreThanThreeProfessions = computed(() => {
   return activeGroupProfessions.value.length > 3;
 });
 
-const visibleGroupProfessions = computed(() => {
-  const list = activeGroupProfessions.value;
-  if (list.length <= 3) return list;
-  const result = [];
-  for (let i = 0; i < 3; i++) {
-    result.push(list[(groupPageStartIndex.value + i) % list.length]);
+const displayedGroupProfessions = computed(() => {
+  if (searchProfessionQuery.value.trim()) {
+    return activeGroupProfessions.value.slice(0, 9);
   }
-  return result;
+  if (isProfessionsExpanded.value) {
+    return activeGroupProfessions.value;
+  }
+  return activeGroupProfessions.value.slice(0, 3);
 });
 
 const activeConfig = computed(() => {
@@ -662,29 +804,46 @@ function getCategoryIcon(iconKey) {
     case 'restaurant': return restaurantOutline;
     case 'wine': return wineOutline;
     case 'flame': return flameOutline;
+    case 'shield': return shieldOutline;
+    case 'id-card': return idCardOutline;
+    case 'camera': return cameraOutline;
     case 'flash': return flashOutline;
     case 'sparkles': return sparklesOutline;
     case 'water': return waterOutline;
     case 'construct': return constructOutline;
     case 'home': return homeOutline;
     case 'shirt': return shirtOutline;
+    case 'color-palette': return colorPaletteOutline;
+    case 'key': return keyOutline;
+    case 'leaf': return leafOutline;
+    case 'fitness': return fitnessOutline;
+    case 'cut': return cutOutline;
+    case 'heart': return heartOutline;
+    case 'school': return schoolOutline;
+    case 'laptop': return laptopOutline;
+    case 'phone-portrait': return phonePortraitOutline;
+    case 'musical-notes': return musicalNotesOutline;
     default: return restaurantOutline;
   }
 }
 
 function selectMacroGroup(groupId) {
   selectedGroupName.value = groupId;
-  groupPageStartIndex.value = 0;
+  searchProfessionQuery.value = '';
+  isProfessionsExpanded.value = false;
   const grp = professionGroups.find(g => g.id === groupId);
   if (grp && grp.items.length > 0 && !grp.items.includes(selectedCategoryName.value)) {
     setCategory(grp.items[0]);
   }
 }
 
-function stepProfession(delta) {
-  const list = activeGroupProfessions.value;
-  if (list.length <= 3) return;
-  groupPageStartIndex.value = (groupPageStartIndex.value + delta + list.length) % list.length;
+function chooseProfession(profName) {
+  const conf = CATEGORY_CONFIGS[profName];
+  if (conf && conf.group) {
+    selectedGroupName.value = conf.group;
+  }
+  setCategory(profName);
+  searchProfessionQuery.value = '';
 }
 
 function setCategory(catName) {
@@ -755,10 +914,11 @@ const formattedDateDisplay = computed(() => {
   const [y, m, d] = raw.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
   const shortWeekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const wd = shortWeekdays[dateObj.getDay()];
   const dd = String(d).padStart(2, '0');
-  const mm = String(m).padStart(2, '0');
-  return `${wd}, ${dd}/${mm}/${y}`;
+  const mm = months[m - 1] || String(m).padStart(2, '0');
+  return `${wd}, ${dd} ${mm}`;
 });
 
 const calculatedDuration = computed(() => {
@@ -806,11 +966,52 @@ function setPresetPrice(p) {
   store.eventForm.valorOferecido = p;
 }
 
-const actionButtonText = computed(() => {
-  if (store.selectedProfessional) {
-    return `CONTRATAR ${store.selectedProfessional.nome.toUpperCase()}`;
+// Verificação de Disponibilidade na Agenda do Profissional
+const isSelectedProFreeOnDate = computed(() => {
+  if (!store.selectedProfessional) return true;
+  return store.isProfessionalFreeOnDate(store.selectedProfessional, store.eventForm.data);
+});
+
+const isModalProFreeOnDate = computed(() => {
+  if (!activeModalPro.value) return true;
+  return store.isProfessionalFreeOnDate(activeModalPro.value, store.eventForm.data);
+});
+
+const modalProScheduleCells = computed(() => {
+  if (!activeModalPro.value) return [];
+  let y = 2026;
+  let m = 10; // Novembro
+  if (store.eventForm.data && store.eventForm.data.includes('-')) {
+    const parts = store.eventForm.data.split('-').map(Number);
+    y = parts[0];
+    m = parts[1] - 1;
   }
-  return `BUSCAR ${activeConfig.value.plural.toUpperCase()} DISPONÍVEIS`;
+  return store.getProfessionalScheduleCells(activeModalPro.value, y, m);
+});
+
+function pickFreeDateFromModalAgenda(cell) {
+  if (cell.empty || cell.status === 'PAST') return;
+  if (cell.status === 'BUSY') {
+    toastMsg.value = `⚠️ ${activeModalPro.value?.nome?.split(' ')[0] || 'O profissional'} está ocupado no dia ${cell.day}. Escolha um dia verde (livre).`;
+    showToast.value = true;
+    return;
+  }
+  store.eventForm.data = cell.iso;
+  activeDateShortcut.value = 'custom';
+  toastMsg.value = `Data definida: ${formattedDateDisplay.value}! ${activeModalPro.value?.nome?.split(' ')[0]} está livre nesta data.`;
+  showToast.value = true;
+}
+
+const actionButtonText = computed(() => {
+  const price = store.eventForm.valorOferecido ? ` • R$ ${store.eventForm.valorOferecido}` : '';
+  if (store.selectedProfessional) {
+    const firstName = store.selectedProfessional.nome.split(' ')[0];
+    if (!isSelectedProFreeOnDate.value) {
+      return `⚠️ ${firstName.toUpperCase()} OCUPADO • ESCOLHER DATA LIVRE`;
+    }
+    return `CONTRATAR ${firstName.toUpperCase()}${price}`;
+  }
+  return `BUSCAR ${activeConfig.value.plural.toUpperCase()}${price}`;
 });
 
 const weeklyHighlights = computed(() => {
@@ -881,13 +1082,24 @@ function selectAndScrollToForm(pro) {
     setCategory(pro.categoria);
   }
   store.selectProfessional(pro);
-  toastMsg.value = `${pro.nome} selecionado! Revise os dados e confirme.`;
+  const isFree = store.isProfessionalFreeOnDate(pro, store.eventForm.data);
+  if (!isFree) {
+    toastMsg.value = `⚠️ ${pro.nome.split(' ')[0]} está ocupado(a) na data escolhida. Abra a agenda para escolher um dia livre.`;
+  } else {
+    toastMsg.value = `${pro.nome} selecionado! Livre para ${formattedDateDisplay.value}.`;
+  }
   showToast.value = true;
   const el = document.getElementById('form-event-card');
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function hireFromModal(pro) {
+  const isFree = store.isProfessionalFreeOnDate(pro, store.eventForm.data);
+  if (!isFree) {
+    toastMsg.value = `⚠️ Escolha um dia com ponto verde na agenda acima antes de enviar a proposta.`;
+    showToast.value = true;
+    return;
+  }
   isProfileModalOpen.value = false;
   selectAndScrollToForm(pro);
 }
@@ -895,6 +1107,13 @@ function hireFromModal(pro) {
 function handleConfirmOrder() {
   if (!store.eventForm.valorOferecido || store.eventForm.valorOferecido < 50) {
     triggerMinimumFloorAlert();
+    return;
+  }
+  if (store.selectedProfessional && !isSelectedProFreeOnDate.value) {
+    const proName = store.selectedProfessional.nome.split(' ')[0];
+    toastMsg.value = `⚠️ ${proName} está ocupado(a) em ${formattedDateDisplay.value}. Escolha uma data livre na agenda dele para enviar a proposta!`;
+    showToast.value = true;
+    openProfileModal(store.selectedProfessional);
     return;
   }
   const newOrd = store.createNewOrder(store.selectedProfessional);
@@ -1122,6 +1341,62 @@ function reportIssue() {
   margin: 0;
 }
 
+.selected-pro-card-banner.pro-busy-alert {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.selected-top-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pro-date-availability-tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.pro-date-availability-tag.free {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.pro-date-availability-tag.busy {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.text-green-avail {
+  color: #4ade80;
+}
+
+.text-amber-busy {
+  color: #fbbf24;
+}
+
+.selected-right-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.view-agenda-selected-btn {
+  background: rgba(212, 255, 36, 0.12);
+  border: 1px solid rgba(212, 255, 36, 0.4);
+  color: #D4FF24;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .clear-selected-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -1166,107 +1441,152 @@ function reportIssue() {
   font-size: 15px;
 }
 
-/* Seletor Hierárquico de Profissional (Eventos | Casa | Limpeza) */
+/* Seletor Hierárquico de Profissional (Fiel ao App Mobile - Imagem de Referência) */
 .pro-selector-showcase-card {
-  background: #0a0e17;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 13px;
-  padding: 12px 10px;
+  background: #04060b;
+  border: 1.5px solid rgba(212, 255, 36, 0.28);
+  border-radius: 16px;
+  padding: 12px 12px 10px;
+}
+
+.pro-selector-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .pro-selector-heading {
-  font-size: 13px;
+  font-size: 1.05rem;
   font-weight: 800;
   color: #ffffff;
-  margin: 0 0 10px 0;
+  margin: 0;
+  white-space: nowrap;
 }
 
-.macro-group-pills {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.pro-search-input-wrap {
+  display: flex;
+  align-items: center;
   gap: 6px;
+  background: #0a0e18;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  padding: 5px 8px;
+  max-width: 200px;
+  flex: 1;
+}
+
+.search-micro-icon {
+  color: #64748b;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.pro-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 0.74rem;
+  width: 100%;
+}
+
+.pro-search-input::placeholder {
+  color: #64748b;
+}
+
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+
+
+/* Abas de Macro-Categoria em Pílulas com Scroll Horizontal */
+.macro-group-pills {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.macro-group-pills::-webkit-scrollbar {
+  display: none;
 }
 
 .macro-pill-btn {
-  background: #0d121d;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
+  background: #0d121c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
   border-radius: 999px;
-  padding: 7px 6px;
-  font-size: 11.5px;
+  padding: 6px 14px;
+  font-size: 0.74rem;
   font-weight: 600;
-  text-align: center;
+  white-space: nowrap;
   cursor: pointer;
-  transition: all 0.16s ease;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
 .macro-pill-btn.active {
-  background: #f1f5f9;
+  background: #ffffff;
   border-color: #ffffff;
   color: #05070b;
   font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.pro-selector-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  margin: 10px 0;
-}
-
-.pro-subcards-carousel-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.subcard-nav-arrow {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
+/* Grade de Profissões (3 colunas com minmax para evitar transpassar) */
 .pro-subcards-grid {
-  flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pro-subcard-item {
-  background: #0d121d;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 10px;
-  padding: 10px 4px;
+  background: #080c14;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 4px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  color: #cbd5e1;
   cursor: pointer;
+  min-height: 66px;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.pro-subcard-item:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #0b101c;
 }
 
 .pro-subcard-item.active {
-  background: rgba(212, 255, 36, 0.14);
+  background: rgba(212, 255, 36, 0.05);
   border: 1.5px solid #D4FF24;
-  color: #ffffff;
 }
 
 .pro-subcard-icon {
-  font-size: 18px;
+  font-size: 22px;
   color: #94a3b8;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .pro-subcard-item.active .pro-subcard-icon {
@@ -1274,17 +1594,57 @@ function reportIssue() {
 }
 
 .pro-subcard-label {
-  font-size: 11px;
+  font-size: 0.72rem;
   font-weight: 600;
+  color: #cbd5e1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: 0 2px;
+  box-sizing: border-box;
 }
 
 .pro-subcard-item.active .pro-subcard-label {
   font-weight: 800;
   color: #ffffff;
+}
+
+/* Linha com Seta para Expandir / Recolher */
+.pro-expand-toggle-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.pro-expand-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pro-expand-pill-btn:hover {
+  background: rgba(212, 255, 36, 0.08);
+  border-color: rgba(212, 255, 36, 0.4);
+  color: #D4FF24;
+}
+
+.expand-chevron-icon {
+  font-size: 13px;
+  color: #D4FF24;
 }
 
 .quick-date-links {
@@ -1552,10 +1912,14 @@ function reportIssue() {
 .trust-footer-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 .trust-shield-icon {
@@ -1564,20 +1928,11 @@ function reportIssue() {
   flex-shrink: 0;
 }
 
-.trust-copy {
-  display: flex;
-  flex-direction: column;
-}
 
-.trust-copy strong {
-  font-size: 11.5px;
-  color: #ffffff;
-}
 
-.trust-copy span {
-  font-size: 10.5px;
-  color: #9ca3af;
-}
+
+
+
 
 /* ================= LISTA DE PROFISSIONAIS DISPONÍVEIS MOBILE ================= */
 .section-heading-row {
@@ -1714,6 +2069,32 @@ function reportIssue() {
   gap: 4px;
 }
 
+.pro-agenda-status-line {
+  margin: 3px 0 5px;
+}
+
+.pro-agenda-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.pro-agenda-tag.free {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.pro-agenda-tag.busy {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
 .pro-pill {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -1755,6 +2136,12 @@ function reportIssue() {
   justify-content: center;
   gap: 4px;
   cursor: pointer;
+}
+
+.quick-select-pro-btn.busy-warn {
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .load-more-container {
@@ -1918,6 +2305,221 @@ function reportIssue() {
   font-weight: 700;
   color: #d1d5db;
   margin: 12px 0 5px;
+}
+
+/* ================= MODAL AGENDA & CALENDÁRIO DO PROFISSIONAL ================= */
+.pro-modal-agenda-section {
+  background: #0d121c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 14px 0 10px;
+}
+
+.modal-agenda-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.modal-agenda-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-agenda-title-wrap .modal-section-title {
+  margin: 0;
+  color: #ffffff;
+}
+
+.modal-agenda-title-wrap .neon-icon {
+  color: #D4FF24;
+  font-size: 16px;
+}
+
+.agenda-status-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.agenda-status-pill.free {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.agenda-status-pill.busy {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.modal-agenda-tip {
+  font-size: 11.5px;
+  color: #9ca3af;
+  margin: 0 0 10px;
+}
+
+.modal-agenda-tip strong {
+  color: #4ade80;
+}
+
+.modal-mini-calendar {
+  background: #070a10;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.mini-cal-month-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #ffffff;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mini-cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.dot-leg {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+
+.dot-leg.free {
+  background: #22c55e;
+}
+
+.dot-leg.busy {
+  background: #ea580c;
+}
+
+.mini-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mini-cal-day-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 7px;
+  padding: 6px 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mini-cal-day-cell.empty {
+  visibility: hidden;
+  border: none;
+  background: transparent;
+}
+
+.mini-cal-day-cell.past {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.mini-cal-day-cell.free {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.mini-cal-day-cell.free:hover {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.mini-cal-day-cell.busy {
+  border-color: rgba(234, 88, 12, 0.3);
+  background: rgba(234, 88, 12, 0.08);
+  opacity: 0.85;
+}
+
+.mini-cal-day-cell.selected {
+  border: 2px solid #D4FF24 !important;
+  background: rgba(212, 255, 36, 0.22) !important;
+  color: #ffffff;
+}
+
+.mini-cell-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.mini-cell-dot.free {
+  background: #22c55e;
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.6);
+}
+
+.mini-cell-dot.busy {
+  background: #ea580c;
+}
+
+.mini-cell-dot.past {
+  background: #6b7280;
+}
+
+.modal-agenda-feedback {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.modal-agenda-feedback.success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #d1fae5;
+}
+
+.modal-agenda-feedback.warn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+}
+
+.hire-now-modal-btn.disabled-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  cursor: not-allowed !important;
 }
 
 .pro-bio-text {
