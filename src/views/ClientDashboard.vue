@@ -733,7 +733,10 @@ import {
   schoolOutline,
   laptopOutline,
   phonePortraitOutline,
-  musicalNotesOutline
+  musicalNotesOutline,
+  cafeOutline,
+  snowOutline,
+  ribbonOutline
 } from 'ionicons/icons';
 import { useAppStore, CATEGORY_CONFIGS, PROFESSION_GROUPS } from '@/stores/useAppStore';
 import CalendarModal from '@/components/CalendarModal.vue';
@@ -823,6 +826,9 @@ function getCategoryIcon(iconKey) {
     case 'laptop': return laptopOutline;
     case 'phone-portrait': return phonePortraitOutline;
     case 'musical-notes': return musicalNotesOutline;
+    case 'cafe': return cafeOutline;
+    case 'snow': return snowOutline;
+    case 'ribbon': return ribbonOutline;
     default: return restaurantOutline;
   }
 }
@@ -1175,12 +1181,15 @@ function reportIssue() {
 }
 
 .header-inner {
+  max-width: 440px;
+  margin: 0 auto;
   padding: 0 12px;
   height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  box-sizing: border-box;
 }
 
 .header-left-group {
@@ -1283,10 +1292,15 @@ function reportIssue() {
 }
 
 .page-wrapper {
+  max-width: 440px;
+  margin: 0 auto;
+  width: 100%;
   padding: 12px 12px 92px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ================= CARD DO FORMULÁRIO MOBILE (+SERVE) ================= */

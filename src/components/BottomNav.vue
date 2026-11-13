@@ -496,7 +496,7 @@ function handleResetPresentation() {
   bottom: 0;
   left: 0;
   right: 0;
-  max-width: 430px;
+  max-width: 440px;
   margin: 0 auto;
   z-index: 1000;
   background: rgba(7, 10, 16, 0.96);

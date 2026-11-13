@@ -39,7 +39,7 @@ export const CATEGORY_CONFIGS = {
     subtitle: 'Drinks clássicos e autorais com confirmação rápida.',
     desc: 'Preparo de drinks clássicos e coquetéis.',
     icon: 'wine',
-    photoUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80',
+    photoUrl: '/profissoes/bartender.jpeg',
     defaultPrice: 240,
     defaultStart: '19:00',
     defaultEnd: '01:00',
@@ -64,7 +64,7 @@ export const CATEGORY_CONFIGS = {
     subtitle: 'Mestres churrasqueiros no ponto certo.',
     desc: 'Cortes nobres e churrasco tradicional.',
     icon: 'flame',
-    photoUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+    photoUrl: '/profissoes/churrasqueiro.jpeg',
     defaultPrice: 220,
     defaultStart: '11:00',
     defaultEnd: '17:00',
@@ -164,7 +164,7 @@ export const CATEGORY_CONFIGS = {
     subtitle: 'Limpeza residencial com referências.',
     desc: 'Faxina completa e organização.',
     icon: 'sparkles',
-    photoUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80',
+    photoUrl: '/profissoes/diarista.jpeg',
     defaultPrice: 160,
     defaultStart: '08:00',
     defaultEnd: '16:00',
@@ -702,6 +702,106 @@ export const CATEGORY_CONFIGS = {
     detailsLabel: 'Observações (opcional)',
     detailsPlaceholder: 'Ex: Instalar 3 câmeras IP externas e configurar no app',
     prices: [110, 160, 230, 330]
+  },
+  Babá: {
+    id: 'cat-baba',
+    name: 'Babá',
+    group: 'Casa',
+    label: 'Babá',
+    noun: 'babá',
+    plural: 'Babás',
+    headlineSuffix: 'para cuidar com carinho',
+    subtitle: 'Babás dedicadas e experientes para cuidar dos seus filhos com segurança e atenção.',
+    desc: 'Cuidado infantil, recreação e acompanhamento diário com referências checadas.',
+    icon: 'heart',
+    photoUrl: '/profissoes/baba.jpeg',
+    defaultPrice: 150,
+    defaultStart: '08:00',
+    defaultEnd: '17:00',
+    serviceTypeLabel: 'Período',
+    serviceTypes: ['Diária Completa (8h)', 'Meio Período (4h)', 'Noite / Evento', 'Final de Semana'],
+    scopeLabel: 'Crianças',
+    scopes: ['1 criança', '2 crianças', '3 ou mais'],
+    locationLabel: 'Endereço',
+    locationPlaceholder: 'Bairro ou endereço',
+    detailsLabel: 'Observações (opcional)',
+    detailsPlaceholder: 'Ex: Idades das crianças e rotina de alimentação',
+    prices: [100, 150, 200, 280]
+  },
+  Barista: {
+    id: 'cat-barista',
+    name: 'Barista',
+    group: 'Eventos',
+    label: 'Barista',
+    noun: 'barista',
+    plural: 'Baristas',
+    headlineSuffix: 'para cafés especiais e eventos',
+    subtitle: 'Especialistas em café especial, drinks artesanais com café e serviço para eventos.',
+    desc: 'Cafés especiais, espresso bar e drinks para eventos corporativos e sociais.',
+    icon: 'cafe',
+    photoUrl: '/profissoes/barista.jpeg',
+    defaultPrice: 200,
+    defaultStart: '08:00',
+    defaultEnd: '14:00',
+    serviceTypeLabel: 'Formato do serviço',
+    serviceTypes: ['Espresso Bar / Evento', 'Coffee Break Corporativo', 'Brunch / Aniversário', 'Cafeteria / Apoio'],
+    scopeLabel: 'Convidados',
+    scopes: ['Até 30 pessoas', '30 a 70 pessoas', '70+ convidados'],
+    locationLabel: 'Local',
+    locationPlaceholder: 'Bairro ou endereço',
+    detailsLabel: 'Observações (opcional)',
+    detailsPlaceholder: 'Ex: Máquina de espresso e grãos especiais',
+    prices: [150, 200, 280, 360]
+  },
+  Cerimonialista: {
+    id: 'cat-cerimonialista',
+    name: 'Cerimonialista',
+    group: 'Eventos',
+    label: 'Cerimonialista',
+    noun: 'cerimonialista',
+    plural: 'Cerimonialistas',
+    headlineSuffix: 'para planejar seu evento',
+    subtitle: 'Organização completa, cronograma, cortejo e assessoria para casamentos e grandes festas.',
+    desc: 'Planejamento e coordenação de casamentos, formaturas e celebrações.',
+    icon: 'ribbon',
+    photoUrl: '/profissoes/cerimonialista.jpeg',
+    defaultPrice: 350,
+    defaultStart: '16:00',
+    defaultEnd: '01:00',
+    serviceTypeLabel: 'Tipo de celebração',
+    serviceTypes: ['Casamento Completo', 'Assessoria do Dia', 'Festa de 15 Anos', 'Formatura / Corporativo'],
+    scopeLabel: 'Equipe',
+    scopes: ['1 coordenador(a)', 'Coordenador + 1 assistente', 'Equipe completa'],
+    locationLabel: 'Local',
+    locationPlaceholder: 'Bairro ou endereço',
+    detailsLabel: 'Observações (opcional)',
+    detailsPlaceholder: 'Ex: Alinhamento de fornecedores e cronograma de entrada',
+    prices: [250, 350, 480, 650]
+  },
+  'Técnico de Ar-Condicionado': {
+    id: 'cat-ar-condicionado',
+    name: 'Técnico de Ar-Condicionado',
+    group: 'Casa',
+    label: 'Ar-Condicionado',
+    noun: 'técnico de ar-condicionado',
+    plural: 'Técnicos de Ar-Condicionado',
+    headlineSuffix: 'para instalação e higienização',
+    subtitle: 'Instalação de splits, recarga de gás, manutenção preventiva e limpeza profunda.',
+    desc: 'Instalação, limpeza e conserto de ar-condicionado residencial e comercial.',
+    icon: 'snow',
+    photoUrl: '/profissoes/tecArcondionado.jpeg',
+    defaultPrice: 180,
+    defaultStart: '09:00',
+    defaultEnd: '13:00',
+    serviceTypeLabel: 'Serviço',
+    serviceTypes: ['Higienização Completa', 'Instalação de Split', 'Recarga de Gás', 'Conserto / Não Gela'],
+    scopeLabel: 'Aparelhos',
+    scopes: ['1 aparelho', '2 aparelhos', '3 ou mais'],
+    locationLabel: 'Endereço',
+    locationPlaceholder: 'Bairro ou endereço',
+    detailsLabel: 'Observações (opcional)',
+    detailsPlaceholder: 'Ex: Split 12.000 BTUs com limpeza e revisão de gás',
+    prices: [120, 180, 240, 320]
   }
 };
 
@@ -710,12 +810,12 @@ export const PROFESSION_GROUPS = [
   {
     id: 'Eventos',
     label: 'Eventos',
-    items: ['Garçom', 'Bartender', 'Churrasqueiro', 'Segurança', 'Recepcionista', 'Fotógrafo']
+    items: ['Garçom', 'Bartender', 'Churrasqueiro', 'Barista', 'Cerimonialista', 'Segurança', 'Recepcionista', 'Fotógrafo']
   },
   {
     id: 'Casa',
     label: 'Casa',
-    items: ['Eletricista', 'Encanador', 'Reformas', 'Pintor', 'Chaveiro']
+    items: ['Eletricista', 'Encanador', 'Técnico de Ar-Condicionado', 'Reformas', 'Pintor', 'Chaveiro', 'Babá']
   },
   {
     id: 'Limpeza',
@@ -757,14 +857,17 @@ export const useAppStore = defineStore('app', () => {
   const activeModalPro = ref(null);
   const activeRequest = ref(null);
   const selectedProfessional = ref(null);
-  const selectedCategory = ref('Garçom');
+  const selectedCategory = ref('Bartender');
 
+  // Carrossel principal com as profissões e fotos presentes no diretório profissoes
   const categoriesList = ref([
-    CATEGORY_CONFIGS.Garçom,
-    CATEGORY_CONFIGS.Eletricista,
+    CATEGORY_CONFIGS.Bartender,
+    CATEGORY_CONFIGS.Churrasqueiro,
     CATEGORY_CONFIGS.Diarista,
-    CATEGORY_CONFIGS.Encanador,
-    CATEGORY_CONFIGS.Reformas
+    CATEGORY_CONFIGS.Babá,
+    CATEGORY_CONFIGS.Barista,
+    CATEGORY_CONFIGS.Cerimonialista,
+    CATEGORY_CONFIGS['Técnico de Ar-Condicionado']
   ]);
 
   // Formulário dinâmico do cliente
@@ -1226,6 +1329,82 @@ export const useAppStore = defineStore('app', () => {
       badges: ['Diagnóstico Rápido', 'Garantia'],
       reviews: [
         { author: 'Fernanda M.', rating: 5, comment: 'Meu notebook estava travando e agora parece novo!' }
+      ]
+    },
+    {
+      id: 31,
+      nome: 'Mariana Duarte',
+      categoria: 'Babá',
+      especialidade: 'Cuidado Infantil & Recreação Pedagógica',
+      bio: 'Pedagoga e babá com 6 anos de experiência com crianças de 0 a 8 anos. Primeiros socorros e referências.',
+      nota: '5,0',
+      servicos: 52,
+      exp: '6 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 150,
+      tags: ['Babá', 'Primeiros Socorros', 'Recreação'],
+      avatar: '/profissoes/baba.jpeg',
+      badges: ['Pedagoga', 'Primeiros Socorros'],
+      reviews: [
+        { author: 'Carla N.', rating: 5, comment: 'Super atenciosa e amorosa com meus filhos!' }
+      ]
+    },
+    {
+      id: 32,
+      nome: 'André Meireles',
+      categoria: 'Barista',
+      especialidade: 'Espresso Bar & Drinks de Café para Eventos',
+      bio: 'Barista profissional certificado SCA. Montagem de estação completa de café especial para casamentos e feiras.',
+      nota: '4,9',
+      servicos: 39,
+      exp: '5 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 200,
+      tags: ['Barista', 'Café Especial', 'Eventos'],
+      avatar: '/profissoes/barista.jpeg',
+      badges: ['Certificado SCA', 'Estação Própria'],
+      reviews: [
+        { author: 'Lucas B.', rating: 5, comment: 'O café foi o ponto alto do coffee break da nossa empresa.' }
+      ]
+    },
+    {
+      id: 33,
+      nome: 'Juliana Cavalcanti',
+      categoria: 'Cerimonialista',
+      especialidade: 'Assessoria Completa para Casamentos & 15 Anos',
+      bio: 'Assessora e cerimonialista com mais de 70 eventos executados com excelência e cronograma sem falhas.',
+      nota: '5,0',
+      servicos: 74,
+      exp: '8 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 350,
+      tags: ['Cerimonialista', 'Casamentos', 'Assessoria'],
+      avatar: '/profissoes/cerimonialista.jpeg',
+      badges: ['Organização 10/10', 'Suporte Total'],
+      reviews: [
+        { author: 'Camila & Thiago', rating: 5, comment: 'Nosso casamento foi perfeito graças à Juliana!' }
+      ]
+    },
+    {
+      id: 34,
+      nome: 'Rogério Medeiros',
+      categoria: 'Técnico de Ar-Condicionado',
+      especialidade: 'Instalação, Carga de Gás & Higienização Split',
+      bio: 'Técnico em refrigeração climatizada. Manutenção preventiva e corretiva com bomba de vácuo e manômetro digital.',
+      nota: '4,9',
+      servicos: 68,
+      exp: '7 anos',
+      local: 'Boa Vista - RR',
+      disponivel: true,
+      valorBase: 180,
+      tags: ['Ar-Condicionado', 'Higienização', 'Gás'],
+      avatar: '/profissoes/tecArcondionado.jpeg',
+      badges: ['Refrigeração Pro', 'Garantia 90 Dias'],
+      reviews: [
+        { author: 'Guilherme P.', rating: 5, comment: 'Limpou os 2 splits com capa de proteção sem sujar a parede.' }
       ]
     }
   ]);

@@ -42,7 +42,7 @@
             {{ activeHeroConfig.subtitle }}
           </p>
 
-          <!-- Roleta 3D Mobile-First (Fotos das Profissões: Garçom, Eletricista, Diarista, Encanador, Reformas) -->
+          <!-- Roleta 3D Mobile-First (Fotos das Profissões do diretório profissoes) -->
           <div class="piao-roulette-stage">
             <div class="piao-pointer-top">▼</div>
 
@@ -56,14 +56,19 @@
                 @click="handlePhotoClick(catItem, idx)"
                 :aria-label="catItem.name"
               >
-                <img :src="catItem.photoUrl" :alt="catItem.name" class="piao-only-img" />
-                <div v-if="idx === activeIndex" class="face-active-caption">
-                  <span>{{ catItem.name }}</span>
-                </div>
+                <img :src="catItem.photoUrl" :alt="catItem.label || catItem.name" class="piao-only-img" />
               </button>
             </div>
 
             <div class="piao-pointer-bottom">▲</div>
+          </div>
+
+          <!-- Indicador da Profissão Ativa (Abaixo da Roleta, sem poluição na imagem) -->
+          <div class="roulette-indicator-wrap">
+            <span class="roulette-indicator-pill">
+              <span class="indicator-neon-dot"></span>
+              <span class="indicator-pro-name">{{ activeHeroConfig.label || activeHeroConfig.name }}</span>
+            </span>
           </div>
 
           <!-- Botão Principal Mobile (Thumb-Zone) -->
@@ -104,7 +109,6 @@
                 <span class="cat-title">{{ cat.name }}</span>
                 <span class="cat-price">Desde R$ {{ cat.defaultPrice }}</span>
               </div>
-              <ion-icon :icon="chevronForwardOutline" class="cat-arrow"></ion-icon>
             </button>
           </div>
         </section>
@@ -150,21 +154,26 @@ import {
   constructOutline,
   wineOutline,
   locationOutline,
-  shieldCheckmarkOutline
+  shieldCheckmarkOutline,
+  flameOutline,
+  heartOutline,
+  cafeOutline,
+  snowOutline,
+  ribbonOutline
 } from 'ionicons/icons';
 import { useAppStore, CATEGORY_CONFIGS } from '@/stores/useAppStore';
 
 const router = useRouter();
 const store = useAppStore();
 
-const activeCategory = ref('Garçom');
+const activeCategory = ref('Bartender');
 const activeIndex = ref(0);
 let rouletteTimer = null;
 
 const rouletteCategories = computed(() => store.categoriesList);
 
 const activeHeroConfig = computed(() => {
-  return CATEGORY_CONFIGS[activeCategory.value] || CATEGORY_CONFIGS.Garçom;
+  return CATEGORY_CONFIGS[activeCategory.value] || CATEGORY_CONFIGS.Bartender || CATEGORY_CONFIGS.Garçom;
 });
 
 function getFacePositionClass(idx) {
@@ -177,8 +186,6 @@ function getFacePositionClass(idx) {
   if (diff === 0) return 'face-center';
   if (diff === -1) return 'face-left-1';
   if (diff === 1) return 'face-right-1';
-  if (diff === -2) return 'face-left-2';
-  if (diff === 2) return 'face-right-2';
   return 'face-hidden';
 }
 
@@ -205,6 +212,12 @@ function getCategoryIcon(iconKey) {
     case 'sparkles': return sparklesOutline;
     case 'water': return waterOutline;
     case 'construct': return constructOutline;
+    case 'wine': return wineOutline;
+    case 'flame': return flameOutline;
+    case 'heart': return heartOutline;
+    case 'cafe': return cafeOutline;
+    case 'snow': return snowOutline;
+    case 'ribbon': return ribbonOutline;
     default: return wineOutline;
   }
 }
@@ -264,11 +277,14 @@ function goToProvider() {
 }
 
 .header-inner {
+  max-width: 440px;
+  margin: 0 auto;
   padding: 0 14px;
   height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .brand-logo {
@@ -334,13 +350,23 @@ function goToProvider() {
 /* ================= CONTAINER MOBILE ================= */
 .landing-content {
   --background: #030407;
+  --overflow: hidden auto;
+}
+
+.landing-content::part(scroll) {
+  overflow-x: hidden !important;
 }
 
 .page-container {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   padding: 14px 14px 92px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 /* ================= 1. HERO MOBILE + ROLETA ================= */
@@ -388,19 +414,22 @@ function goToProvider() {
   margin: 0 0 10px;
 }
 
-/* Palco 3D Mobile */
+/* Palco 3D Mobile Responsivo (Cards Largos Proporcionais ao Flyer 1199x1312) */
 .piao-roulette-stage {
   position: relative;
   width: 100%;
-  height: 184px;
+  max-width: 100%;
+  height: clamp(265px, 74vw, 320px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   perspective: 900px;
   overflow: hidden;
+  contain: paint;
   user-select: none;
-  margin: 2px 0 12px;
+  margin: 4px 0 6px;
+  box-sizing: border-box;
 }
 
 .piao-pointer-top,
@@ -414,17 +443,17 @@ function goToProvider() {
 }
 
 .piao-pointer-top {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .piao-pointer-bottom {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .piao-wheel-track {
   position: relative;
   width: 100%;
-  height: 142px;
+  height: clamp(230px, 66vw, 285px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -433,16 +462,19 @@ function goToProvider() {
 
 .piao-photo-face {
   position: absolute;
-  width: 114px;
-  height: 140px;
-  border-radius: 16px;
+  width: clamp(210px, 62vw, 258px);
+  aspect-ratio: 1199 / 1312;
+  height: auto;
+  max-height: clamp(230px, 66vw, 282px);
+  border-radius: 20px;
   padding: 0;
-  border: 2px solid rgba(255, 255, 255, 0.14);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
   background: #080b11;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+  box-sizing: border-box;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
               border-color 0.35s ease,
               box-shadow 0.35s ease;
 }
@@ -450,68 +482,78 @@ function goToProvider() {
 .piao-only-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   pointer-events: none;
+  background: #080b11;
 }
 
-.face-active-caption {
-  position: absolute;
-  bottom: 6px;
-  left: 6px;
-  right: 6px;
-  background: rgba(5, 8, 14, 0.86);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(212, 255, 36, 0.45);
-  border-radius: 8px;
-  padding: 3px 6px;
-  text-align: center;
-}
-
-.face-active-caption span {
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #D4FF24;
-  letter-spacing: 0.2px;
-}
-
+/* Card central ativo: largo, nítido e com destaque total */
 .piao-photo-face.face-center {
-  transform: translate3d(0, 0, 55px) rotateY(0deg) scale(1.04);
+  transform: translate3d(0, 0, 36px) rotateY(0deg) scale(1);
   z-index: 10;
   opacity: 1;
-  border-color: #D4FF24;
-  box-shadow: 0 0 24px rgba(212, 255, 36, 0.35);
+  border: 2px solid #D4FF24;
+  box-shadow: 0 10px 32px rgba(212, 255, 36, 0.32);
 }
 
+/* Card esquerdo anterior (peeking suave atrás) */
 .piao-photo-face.face-left-1 {
-  transform: translate3d(-86px, 0, 0px) rotateY(32deg) scale(0.84);
-  z-index: 6;
-  opacity: 0.72;
+  transform: translate3d(calc(-1 * clamp(50px, 16vw, 76px)), 0, -28px) rotateY(16deg) scale(0.85);
+  z-index: 5;
+  opacity: 0.55;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Card direito posterior (peeking suave atrás) */
 .piao-photo-face.face-right-1 {
-  transform: translate3d(86px, 0, 0px) rotateY(-32deg) scale(0.84);
-  z-index: 6;
-  opacity: 0.72;
-}
-
-.piao-photo-face.face-left-2 {
-  transform: translate3d(-146px, 0, -55px) rotateY(52deg) scale(0.66);
-  z-index: 3;
-  opacity: 0.28;
-}
-
-.piao-photo-face.face-right-2 {
-  transform: translate3d(146px, 0, -55px) rotateY(-52deg) scale(0.66);
-  z-index: 3;
-  opacity: 0.28;
+  transform: translate3d(clamp(50px, 16vw, 76px), 0, -28px) rotateY(-16deg) scale(0.85);
+  z-index: 5;
+  opacity: 0.55;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .piao-photo-face.face-hidden {
-  transform: translate3d(0, 0, -120px) rotateY(180deg) scale(0.4);
+  transform: translate3d(0, 0, -120px) rotateY(180deg) scale(0.3);
   z-index: 1;
   opacity: 0;
   pointer-events: none;
+}
+
+/* Indicador Limpo da Profissão Ativa (Abaixo da Roleta) */
+.roulette-indicator-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  margin-bottom: 12px;
+}
+
+.roulette-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(13, 18, 28, 0.95);
+  border: 1px solid rgba(212, 255, 36, 0.45);
+  padding: 5px 14px;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 14px rgba(212, 255, 36, 0.15);
+}
+
+.indicator-neon-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #D4FF24;
+  box-shadow: 0 0 8px #D4FF24;
+}
+
+.indicator-pro-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
 }
 
 .hero-primary-btn {
@@ -579,46 +621,62 @@ function goToProvider() {
   color: #6b7280;
 }
 
+.categories-section {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .categories-mobile-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cat-minimal-card {
   background: #080b11;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 13px;
   padding: 10px 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   text-align: left;
   color: #ffffff;
   cursor: pointer;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   transition: all 0.16s ease;
 }
 
+/* Quando houver número ímpar de itens (7 categorias), o último ocupa a largura total com elegância */
+.cat-minimal-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .cat-minimal-card.active {
-  border-color: rgba(212, 255, 36, 0.5);
-  background: rgba(212, 255, 36, 0.06);
+  border-color: rgba(212, 255, 36, 0.55);
+  background: rgba(212, 255, 36, 0.07);
 }
 
 .cat-icon-box {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.04);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
   color: #9ca3af;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 17px;
   flex-shrink: 0;
 }
 
 .cat-minimal-card.active .cat-icon-box {
-  background: rgba(212, 255, 36, 0.15);
+  background: rgba(212, 255, 36, 0.16);
   color: #D4FF24;
 }
 
@@ -626,32 +684,24 @@ function goToProvider() {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
 .cat-title {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.1px;
 }
 
 .cat-price {
-  font-size: 10.5px;
-  color: #6b7280;
-}
-
-.cat-arrow {
-  color: #4b5563;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.cat-minimal-card.active .cat-arrow {
-  color: #D4FF24;
+  font-size: 11px;
+  color: #8b95a5;
+  font-weight: 500;
 }
 
 /* ================= 3. BANNER COMPACTO PRESTADOR ================= */
@@ -665,12 +715,16 @@ function goToProvider() {
   justify-content: space-between;
   gap: 10px;
   cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .worker-banner-left {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .worker-icon-circle {
@@ -703,5 +757,77 @@ function goToProvider() {
   color: #D4FF24;
   font-size: 17px;
   flex-shrink: 0;
+}
+
+/* ================= RESPONSIVIDADE MULTI-TELA (MOBILE ESTREITO, TABLET E DESKTOP) ================= */
+@media (max-width: 360px) {
+  .header-inner {
+    padding: 0 8px;
+  }
+  .brand-name {
+    font-size: 16px;
+  }
+  .location-badge {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+  .mobile-provider-pill {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  .hero-headline {
+    font-size: 20px;
+  }
+  .hero-primary-btn {
+    height: 44px;
+    font-size: 11.5px;
+  }
+  .categories-mobile-grid {
+    gap: 6px;
+  }
+  .cat-minimal-card {
+    padding: 8px 8px;
+    gap: 7px;
+  }
+  .cat-title {
+    font-size: 11.5px;
+  }
+  .cat-price {
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 600px) {
+  .page-container {
+    max-width: 620px;
+    padding: 24px 20px 100px;
+    gap: 28px;
+  }
+  .header-inner {
+    max-width: 620px;
+    padding: 0 20px;
+  }
+  .hero-headline {
+    font-size: 27px;
+  }
+  .categories-mobile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .cat-minimal-card:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 900px) {
+  .page-container {
+    max-width: 720px;
+  }
+  .header-inner {
+    max-width: 720px;
+  }
+  .categories-mobile-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 </style>
