@@ -64,3 +64,14 @@ $RECYCLE.BIN/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Builds Mobile (Capacitor / Android / iOS) & Assinaturas
+*.apk
+*.aab
+*.ap_
+*.ipa
+*.jks
+*.keystore
+.gradle/
+local.properties
+capacitor.config.json
