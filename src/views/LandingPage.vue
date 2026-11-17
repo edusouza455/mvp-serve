@@ -414,12 +414,12 @@ function goToProvider() {
   margin: 0 0 10px;
 }
 
-/* Palco 3D Mobile Responsivo (Cards Largos Proporcionais ao Flyer 1199x1312) */
+/* Palco 3D Mobile Responsivo (Cards Largos Proporcionais às Imagens 1080x900) */
 .piao-roulette-stage {
   position: relative;
   width: 100%;
   max-width: 100%;
-  height: clamp(265px, 74vw, 320px);
+  height: clamp(220px, 60vw, 255px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -453,7 +453,7 @@ function goToProvider() {
 .piao-wheel-track {
   position: relative;
   width: 100%;
-  height: clamp(230px, 66vw, 285px);
+  height: clamp(190px, 53vw, 224px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -462,10 +462,10 @@ function goToProvider() {
 
 .piao-photo-face {
   position: absolute;
-  width: clamp(210px, 62vw, 258px);
-  aspect-ratio: 1199 / 1312;
+  width: clamp(224px, 64vw, 268px);
+  aspect-ratio: 1080 / 900;
   height: auto;
-  max-height: clamp(230px, 66vw, 282px);
+  max-height: clamp(186px, 53vw, 224px);
   border-radius: 20px;
   padding: 0;
   border: 1.5px solid rgba(255, 255, 255, 0.12);
@@ -482,7 +482,7 @@ function goToProvider() {
 .piao-only-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
   pointer-events: none;
   background: #080b11;
