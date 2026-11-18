@@ -245,6 +245,30 @@
           <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
         </div>
 
+        <!-- Atalho para o Perfil Gamificado Completo (Dados, Métodos de Pagamento e XP) -->
+        <div class="profile-menu-item" @click="goToFullGamifiedProfile">
+          <div class="menu-item-icon">
+            <ion-icon :icon="personOutline"></ion-icon>
+          </div>
+          <div class="menu-item-text">
+            <h4>Perfil Completo & Gamificação (Nv. {{ store.workerProfile.level }})</h4>
+            <p>Editar nome, telefone, métodos de pagamento, bio, cursos e certificados (+XP).</p>
+          </div>
+          <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
+        </div>
+
+        <!-- Atalho para Tela de Login e Cadastro -->
+        <div class="profile-menu-item" @click="goToAuthScreen">
+          <div class="menu-item-icon">
+            <ion-icon :icon="briefcaseOutline"></ion-icon>
+          </div>
+          <div class="menu-item-text">
+            <h4>Fluxo de Login & Cadastro</h4>
+            <p>Acessar tela de login mockado (1 clique) e visualização de cadastro.</p>
+          </div>
+          <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
+        </div>
+
         <!-- Atalho para Carteira do Prestador (EXCLUSIVO DO PRESTADOR DE SERVIÇO) -->
         <div v-if="isProviderMode" class="profile-menu-item" @click="goToProviderWallet">
           <div class="menu-item-icon">
@@ -464,6 +488,18 @@ async function goToProviderWallet() {
   store.role = 'PROVIDER';
   store.providerTab = 'carteira';
   await router.push('/provider');
+}
+
+async function goToFullGamifiedProfile() {
+  store.profileMenuModalOpen = false;
+  store.role = 'PROVIDER';
+  store.providerTab = 'perfil';
+  await router.push('/provider?tab=perfil');
+}
+
+async function goToAuthScreen() {
+  store.profileMenuModalOpen = false;
+  await router.push('/login');
 }
 
 function switchToOrdersFromProfile() {

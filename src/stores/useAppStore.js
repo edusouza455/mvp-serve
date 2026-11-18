@@ -1458,11 +1458,19 @@ export const useAppStore = defineStore('app', () => {
 
   const ordersList = ref(JSON.parse(JSON.stringify(initialOrdersList)));
 
-  // ================= ESTADO DO TRABALHADOR (PROVIDER) =================
+  // ================= ESTADO DO TRABALHADOR (PROVIDER) & AUTENTICAÇÃO =================
   const walletBalance = ref(180.00);
+  const isAuthenticated = ref(true);
+  const mockCredentials = ref({
+    username: 'carlos.oliveira@serve.app',
+    password: 'serve2026'
+  });
 
   const initialWorkerProfile = {
     name: 'Carlos Oliveira',
+    phone: '(95) 99142-8830',
+    email: 'carlos.oliveira@serve.app',
+    location: 'Boa Vista - RR',
     categoria: 'Garçom & Multiserviços',
     category: 'Garçom',
     pixKey: 'carlos.oliveira@pix.com.br',
@@ -1473,10 +1481,38 @@ export const useAppStore = defineStore('app', () => {
     completedJobs: 42,
     xp: 3100,
     nextLevelXp: 4000,
-    activeBoost: null
+    activeBoost: null,
+    bio: 'Profissional com 6 anos de experiência em eventos sociais, casamentos e atendimento de alto padrão em Boa Vista - RR.',
+    bioXpClaimed: false,
+    paymentMethods: {
+      fisico: true,
+      pix: true,
+      cartao: false,
+      hasCardMachine: false
+    },
+    courses: [
+      {
+        id: 'crs-1',
+        title: 'Excelência em Atendimento e Etiqueta para Eventos',
+        institution: 'SENAC Roraima • 40h',
+        xpEarned: 200
+      }
+    ],
+    certificates: [
+      {
+        id: 'cert-1',
+        title: 'Certificado Boas Práticas e Manipulação de Alimentos',
+        issuer: 'ANVISA / Vigilância Sanitária • 2025',
+        xpEarned: 300
+      }
+    ],
+    xpHistory: [
+      { id: 'xph-1', label: 'Certificado verificado adicionado', xp: 300, date: 'Conquistado' },
+      { id: 'xph-2', label: 'Curso profissionalizante adicionado', xp: 200, date: 'Conquistado' }
+    ]
   };
 
-  const workerProfile = ref({ ...initialWorkerProfile });
+  const workerProfile = ref(JSON.parse(JSON.stringify(initialWorkerProfile)));
 
   const initialJobLeads = [
     {
@@ -2049,13 +2085,172 @@ export const useAppStore = defineStore('app', () => {
     jobLeads.value = JSON.parse(JSON.stringify(initialJobLeads));
   }
 
+  // ================= GAMIFICAÇÃO DO PERFIL & AUTENTICAÇÃO MOCKADA =================
+  const LEVEL_TITLES = {
+    1: 'Profissional Iniciante',
+    2: 'Profissional Bronze',
+    3: 'Profissional Prata',
+    4: 'Profissional Ouro • Verificado',
+    5: 'Especialista Platina • Elite',
+    6: 'Mestre Diamante +SERVE',
+    7: 'Lenda +SERVE • Top 1%'
+  };
+
+  function awardProfileXp(amount, label = 'Ação no perfil') {
+    const gain = Number(amount) || 0;
+    if (gain <= 0) return { leveledUp: false, newLevel: workerProfile.value.level, gain: 0 };
+
+    let currentXp = (Number(workerProfile.value.xp) || 0) + gain;
+    let currentLevel = Number(workerProfile.value.level) || 4;
+    let nextMax = Number(workerProfile.value.nextLevelXp) || 4000;
+    let leveledUp = false;
+
+    while (currentXp >= nextMax) {
+      currentLevel += 1;
+      nextMax += 1000;
+      leveledUp = true;
+    }
+
+    workerProfile.value.xp = currentXp;
+    workerProfile.value.level = currentLevel;
+    workerProfile.value.nextLevelXp = nextMax;
+    workerProfile.value.levelName = LEVEL_TITLES[currentLevel] || `Lenda Nível ${currentLevel} • +SERVE`;
+
+    if (!Array.isArray(workerProfile.value.xpHistory)) {
+      workerProfile.value.xpHistory = [];
+    }
+    workerProfile.value.xpHistory.unshift({
+      id: `xph-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      label,
+      xp: gain,
+      date: 'Agora mesmo'
+    });
+
+    return { leveledUp, newLevel: currentLevel, gain };
+  }
+
+  function saveWorkerBio(newBioText) {
+    const cleaned = String(newBioText || '').trim();
+    if (!cleaned) return { ok: false, xpGained: 0, leveledUp: false };
+    workerProfile.value.bio = cleaned;
+    const xpAmount = 150;
+    workerProfile.value.bioXpClaimed = true;
+    const res = awardProfileXp(xpAmount, 'Bio profissional atualizada (+150 XP)');
+    return { ok: true, xpGained: xpAmount, leveledUp: res.leveledUp, newLevel: res.newLevel };
+  }
+
+  function addWorkerCourse(title, institution = 'Curso Livre / Capacitação') {
+    const cleanedTitle = String(title || '').trim();
+    if (!cleanedTitle) return { ok: false };
+    const cleanedInst = String(institution || 'Capacitação Profissional').trim() || 'Capacitação Profissional';
+
+    if (!Array.isArray(workerProfile.value.courses)) {
+      workerProfile.value.courses = [];
+    }
+
+    const newCourse = {
+      id: `crs-${Date.now()}`,
+      title: cleanedTitle,
+      institution: cleanedInst,
+      xpEarned: 200
+    };
+    workerProfile.value.courses.unshift(newCourse);
+    const res = awardProfileXp(200, `Curso adicionado: ${cleanedTitle}`);
+    return { ok: true, course: newCourse, xpGained: 200, leveledUp: res.leveledUp, newLevel: res.newLevel };
+  }
+
+  function removeWorkerCourse(courseId) {
+    if (!Array.isArray(workerProfile.value.courses)) return;
+    workerProfile.value.courses = workerProfile.value.courses.filter(c => c.id !== courseId);
+  }
+
+  function addWorkerCertificate(title, issuer = 'Certificação Verificada') {
+    const cleanedTitle = String(title || '').trim();
+    if (!cleanedTitle) return { ok: false };
+    const cleanedIssuer = String(issuer || 'Certificação Profissional').trim() || 'Certificação Profissional';
+
+    if (!Array.isArray(workerProfile.value.certificates)) {
+      workerProfile.value.certificates = [];
+    }
+
+    const newCert = {
+      id: `cert-${Date.now()}`,
+      title: cleanedTitle,
+      issuer: cleanedIssuer,
+      xpEarned: 300
+    };
+    workerProfile.value.certificates.unshift(newCert);
+    const res = awardProfileXp(300, `Certificado adicionado: ${cleanedTitle}`);
+    return { ok: true, certificate: newCert, xpGained: 300, leveledUp: res.leveledUp, newLevel: res.newLevel };
+  }
+
+  function removeWorkerCertificate(certId) {
+    if (!Array.isArray(workerProfile.value.certificates)) return;
+    workerProfile.value.certificates = workerProfile.value.certificates.filter(c => c.id !== certId);
+  }
+
+  function saveWorkerPersonalAndPayment(payload = {}) {
+    if (payload.name !== undefined && String(payload.name).trim()) {
+      workerProfile.value.name = String(payload.name).trim();
+    }
+    if (payload.phone !== undefined) {
+      workerProfile.value.phone = String(payload.phone).trim();
+    }
+    if (payload.email !== undefined) {
+      workerProfile.value.email = String(payload.email).trim();
+    }
+    if (payload.location !== undefined) {
+      workerProfile.value.location = String(payload.location).trim();
+    }
+    if (payload.pixKey !== undefined) {
+      workerProfile.value.pixKey = String(payload.pixKey).trim();
+    }
+    if (payload.paymentMethods) {
+      workerProfile.value.paymentMethods = {
+        ...workerProfile.value.paymentMethods,
+        ...payload.paymentMethods
+      };
+    }
+    return true;
+  }
+
+  function loginWithMock(targetRole = 'PROVIDER') {
+    isAuthenticated.value = true;
+    role.value = targetRole === 'CLIENT' ? 'CLIENT' : 'PROVIDER';
+    return true;
+  }
+
+  function registerWithMock(formPayload = {}) {
+    isAuthenticated.value = true;
+    if (formPayload.name && String(formPayload.name).trim()) {
+      workerProfile.value.name = String(formPayload.name).trim();
+    }
+    if (formPayload.phone && String(formPayload.phone).trim()) {
+      workerProfile.value.phone = String(formPayload.phone).trim();
+    }
+    if (formPayload.email && String(formPayload.email).trim()) {
+      workerProfile.value.email = String(formPayload.email).trim();
+    }
+    if (formPayload.category) {
+      workerProfile.value.category = formPayload.category;
+      workerProfile.value.categoria = `${formPayload.category} • Verificado`;
+    }
+    if (formPayload.paymentMethods) {
+      workerProfile.value.paymentMethods = {
+        ...workerProfile.value.paymentMethods,
+        ...formPayload.paymentMethods
+      };
+    }
+    return true;
+  }
+
   // Restaura todos os estados da aplicação para o início da apresentação (Demo Reset)
   function resetPresentation() {
     ordersList.value = JSON.parse(JSON.stringify(initialOrdersList));
     jobLeads.value = JSON.parse(JSON.stringify(initialJobLeads));
     acceptedJobs.value = [];
     walletBalance.value = 180.00;
-    workerProfile.value = { ...initialWorkerProfile };
+    workerProfile.value = JSON.parse(JSON.stringify(initialWorkerProfile));
     transactions.value = JSON.parse(JSON.stringify(initialTransactions));
     selectedProfessional.value = null;
     activeRequest.value = null;
@@ -2106,6 +2301,8 @@ export const useAppStore = defineStore('app', () => {
     availableProfessionals,
     ordersList,
     walletBalance,
+    isAuthenticated,
+    mockCredentials,
     workerProfile,
     jobLeads,
     acceptedJobs,
@@ -2131,6 +2328,15 @@ export const useAppStore = defineStore('app', () => {
     setClientAccepted,
     activateBoostPlan,
     resetJobLeads,
+    awardProfileXp,
+    saveWorkerBio,
+    addWorkerCourse,
+    removeWorkerCourse,
+    addWorkerCertificate,
+    removeWorkerCertificate,
+    saveWorkerPersonalAndPayment,
+    loginWithMock,
+    registerWithMock,
     resetPresentation
   };
 });

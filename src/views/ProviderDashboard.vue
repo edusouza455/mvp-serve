@@ -445,45 +445,38 @@
           </div>
         </section>
 
-        <!-- ================= TELA 3: PERFIL MOBILE DO PRESTADOR DE SERVIÇO ================= -->
+        <!-- ================= TELA 3: PERFIL MINIMALISTA & GAMIFICADO ================= -->
         <section v-if="store.providerTab === 'perfil'" class="tab-pane">
           <div class="profile-main-card">
-            <div class="profile-top-avatar-row">
-              <div class="avatar-ring-box">
-                <img :src="store.workerProfile.avatar" :alt="store.workerProfile.name" class="worker-avatar-img" />
-                <span class="level-indicator-tag">Nv. {{ store.workerProfile.level }}</span>
-              </div>
+            <!-- Topo Compacto: Avatar + Nível + Botão Login/Cadastro -->
+            <div class="profile-top-bar">
+              <div class="profile-top-avatar-row">
+                <div class="avatar-ring-box">
+                  <img :src="store.workerProfile.avatar" :alt="store.workerProfile.name" class="worker-avatar-img" />
+                  <span class="level-indicator-tag">Nv. {{ store.workerProfile.level }}</span>
+                </div>
 
-              <div class="worker-meta-details">
-                <span class="worker-badge-role">PRESTADOR VERIFICADO</span>
-                <h3 class="worker-name-big">{{ store.workerProfile.name }}</h3>
-                <div class="worker-rating-line">
-                  <ion-icon :icon="star" class="star-gold"></ion-icon>
-                  <span>{{ store.workerProfile.rating }} / 5.0</span>
-                  <span class="jobs-counter-text">({{ store.workerProfile.completedJobs }} serviços)</span>
+                <div class="worker-meta-details">
+                  <span class="worker-badge-role">{{ store.workerProfile.category }} • Verificado</span>
+                  <h3 class="worker-name-big">{{ store.workerProfile.name }}</h3>
+                  <div class="worker-rating-line">
+                    <ion-icon :icon="star" class="star-gold"></ion-icon>
+                    <span>{{ store.workerProfile.rating }}</span>
+                    <span class="jobs-counter-text">({{ store.workerProfile.completedJobs }} serviços)</span>
+                  </div>
                 </div>
               </div>
+
+              <button type="button" class="mini-auth-btn" @click="router.push('/login')">
+                <ion-icon :icon="personOutline"></ion-icon>
+                <span>Conta</span>
+              </button>
             </div>
 
-            <div class="specialty-selector-box">
-              <label class="spec-label">Sua especialidade principal:</label>
-              <div class="filter-pills-scroll">
-                <button
-                  v-for="cat in allProfileCategories"
-                  :key="cat.id"
-                  type="button"
-                  class="cat-filter-pill"
-                  :class="{ active: store.workerProfile.category === cat.name }"
-                  @click="updateWorkerCategory(cat.name)"
-                >
-                  {{ cat.name }}
-                </button>
-              </div>
-            </div>
-
-            <div class="xp-container">
-              <div class="xp-labels-row">
-                <span>Reputação para Nível {{ store.workerProfile.level + 1 }}</span>
+            <!-- Barra Gamificada de XP Compacta -->
+            <div class="xp-minimal-box">
+              <div class="xp-min-row">
+                <span>Nível {{ store.workerProfile.level }} → Nível {{ store.workerProfile.level + 1 }}</span>
                 <strong>{{ store.workerProfile.xp }} / {{ store.workerProfile.nextLevelXp }} XP</strong>
               </div>
               <div class="xp-bar-track">
@@ -494,21 +487,238 @@
               </div>
             </div>
 
+            <!-- Switcher Interno Minimalista: Dados & Pagamento vs Currículo (+XP) -->
+            <div class="profile-sub-tabs">
+              <button
+                type="button"
+                class="p-sub-tab"
+                :class="{ active: profileSubTab === 'dados' }"
+                @click="profileSubTab = 'dados'"
+              >
+                Dados & Pagamento
+              </button>
+              <button
+                type="button"
+                class="p-sub-tab"
+                :class="{ active: profileSubTab === 'xp' }"
+                @click="profileSubTab = 'xp'"
+              >
+                Currículo (+XP)
+              </button>
+            </div>
+
+            <!-- ABA INTERNA 1: DADOS & MÉTODOS DE PAGAMENTO -->
+            <div v-if="profileSubTab === 'dados'" class="profile-clean-pane">
+              <div class="prof-two-cols">
+                <div class="prof-field-box">
+                  <label class="prof-field-label">Nome</label>
+                  <input
+                    type="text"
+                    v-model="store.workerProfile.name"
+                    class="prof-dark-input"
+                    placeholder="Seu nome"
+                  />
+                </div>
+
+                <div class="prof-field-box">
+                  <label class="prof-field-label">Telefone</label>
+                  <input
+                    type="tel"
+                    v-model="store.workerProfile.phone"
+                    class="prof-dark-input"
+                    placeholder="(95) 99142-8830"
+                  />
+                </div>
+              </div>
+
+              <div class="prof-field-box">
+                <label class="prof-field-label">Especialidade</label>
+                <div class="filter-pills-scroll">
+                  <button
+                    v-for="cat in allProfileCategories"
+                    :key="cat.id"
+                    type="button"
+                    class="cat-filter-pill"
+                    :class="{ active: store.workerProfile.category === cat.name }"
+                    @click="updateWorkerCategory(cat.name)"
+                  >
+                    {{ cat.name }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Caixa Minimalista de Métodos de Pagamento -->
+              <div class="prof-field-box">
+                <label class="prof-field-label">Como prefere receber?</label>
+                <div class="pm-minimal-grid">
+                  <button
+                    type="button"
+                    class="pm-mini-card"
+                    :class="{ active: store.workerProfile.paymentMethods?.fisico }"
+                    @click="toggleWorkerPaymentMethod('fisico')"
+                  >
+                    <ion-icon :icon="cashOutline"></ion-icon>
+                    <span>Físico</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="pm-mini-card"
+                    :class="{ active: store.workerProfile.paymentMethods?.pix }"
+                    @click="toggleWorkerPaymentMethod('pix')"
+                  >
+                    <ion-icon :icon="qrCodeOutline"></ion-icon>
+                    <span>PIX</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="pm-mini-card"
+                    :class="{ active: store.workerProfile.paymentMethods?.cartao }"
+                    @click="toggleWorkerPaymentMethod('cartao')"
+                  >
+                    <ion-icon :icon="cardOutline"></ion-icon>
+                    <span>Cartão</span>
+                    <small class="pm-req-tag">Maquininha</small>
+                  </button>
+                </div>
+
+                <input
+                  v-if="store.workerProfile.paymentMethods?.pix"
+                  type="text"
+                  v-model="store.workerProfile.pixKey"
+                  class="prof-dark-input mt-6"
+                  placeholder="Chave PIX (CPF, Celular ou E-mail)"
+                />
+
+                <label v-if="store.workerProfile.paymentMethods?.cartao" class="machine-inline-check">
+                  <input type="checkbox" v-model="store.workerProfile.paymentMethods.hasCardMachine" />
+                  <span>Possuo maquininha própria para levar ao serviço</span>
+                </label>
+              </div>
+
+              <button type="button" class="save-profile-data-btn" @click="handleSavePersonalAndPayments">
+                <ion-icon :icon="checkmarkOutline"></ion-icon>
+                <span>Salvar Perfil</span>
+              </button>
+            </div>
+
+            <!-- ABA INTERNA 2: CURRÍCULO GAMIFICADO (+XP) -->
+            <div v-else class="profile-clean-pane">
+              <!-- 1. Bio (+150 XP) -->
+              <div class="gamified-clean-block">
+                <div class="g-head-line">
+                  <label class="prof-field-label">Bio Profissional</label>
+                  <span class="gb-xp-tag">+150 XP</span>
+                </div>
+                <textarea
+                  v-model="bioDraft"
+                  rows="2"
+                  class="prof-dark-textarea"
+                  placeholder="Resumo da sua experiência..."
+                ></textarea>
+                <button type="button" class="gb-action-btn" @click="handleSaveGamifiedBio">
+                  Salvar Bio (+150 XP)
+                </button>
+              </div>
+
+              <!-- 2. Cursos (+200 XP) -->
+              <div class="gamified-clean-block">
+                <div class="g-head-line">
+                  <label class="prof-field-label">Cursos ({{ store.workerProfile.courses?.length || 0 }})</label>
+                  <span class="gb-xp-tag">+200 XP</span>
+                </div>
+
+                <div class="gb-form-row-2">
+                  <input
+                    type="text"
+                    v-model="newCourseTitle"
+                    class="prof-dark-input"
+                    placeholder="Adicionar curso..."
+                    @keyup.enter="handleAddCourse"
+                  />
+                  <button type="button" class="gb-add-submit-btn" @click="handleAddCourse">
+                    + Adicionar
+                  </button>
+                </div>
+
+                <div class="quick-add-chips">
+                  <button
+                    v-for="sugCourse in suggestedCourses.slice(0, 2)"
+                    :key="sugCourse.title"
+                    type="button"
+                    class="quick-add-pill"
+                    @click="quickAddCourse(sugCourse)"
+                  >
+                    + {{ sugCourse.title }}
+                  </button>
+                </div>
+
+                <div v-if="store.workerProfile.courses?.length" class="gb-items-list">
+                  <div
+                    v-for="crs in store.workerProfile.courses"
+                    :key="crs.id"
+                    class="gb-earned-row"
+                  >
+                    <span class="gb-item-text">🎓 {{ crs.title }}</span>
+                    <button type="button" class="gb-remove-btn" @click="store.removeWorkerCourse(crs.id)">✕</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Certificados (+300 XP) -->
+              <div class="gamified-clean-block">
+                <div class="g-head-line">
+                  <label class="prof-field-label">Certificados ({{ store.workerProfile.certificates?.length || 0 }})</label>
+                  <span class="gb-xp-tag highlight">+300 XP</span>
+                </div>
+
+                <div class="gb-form-row-2">
+                  <input
+                    type="text"
+                    v-model="newCertTitle"
+                    class="prof-dark-input"
+                    placeholder="Adicionar certificado..."
+                    @keyup.enter="handleAddCertificate"
+                  />
+                  <button type="button" class="gb-add-submit-btn" @click="handleAddCertificate">
+                    + Adicionar
+                  </button>
+                </div>
+
+                <div class="quick-add-chips">
+                  <button
+                    v-for="sugCert in suggestedCertificates.slice(0, 2)"
+                    :key="sugCert.title"
+                    type="button"
+                    class="quick-add-pill"
+                    @click="quickAddCertificate(sugCert)"
+                  >
+                    + {{ sugCert.title }}
+                  </button>
+                </div>
+
+                <div v-if="store.workerProfile.certificates?.length" class="gb-items-list">
+                  <div
+                    v-for="cert in store.workerProfile.certificates"
+                    :key="cert.id"
+                    class="gb-earned-row"
+                  >
+                    <span class="gb-item-text">📜 {{ cert.title }}</span>
+                    <button type="button" class="gb-remove-btn" @click="store.removeWorkerCertificate(cert.id)">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rodapé Compacto -->
             <div class="profile-quick-actions">
               <button type="button" class="switch-client-card-btn" @click="exitToClientHome">
                 <div class="switch-btn-left">
                   <ion-icon :icon="swapHorizontalOutline" class="neon-icon"></ion-icon>
-                  <div>
-                    <strong>Voltar para a Home (Modo Cliente)</strong>
-                    <span>Retornar ao início da navegação como Contratante</span>
-                  </div>
+                  <strong>Modo Cliente</strong>
                 </div>
                 <ion-icon :icon="arrowForwardOutline"></ion-icon>
-              </button>
-
-              <button type="button" class="reset-presentation-btn" @click="handleResetDemo">
-                <ion-icon :icon="refreshOutline"></ion-icon>
-                <span>Resetar Apresentação (Restaurar Estados)</span>
               </button>
             </div>
           </div>
@@ -821,7 +1031,8 @@ import {
   qrCodeOutline,
   cardOutline,
   star,
-  shieldCheckmarkOutline
+  shieldCheckmarkOutline,
+  personOutline
 } from 'ionicons/icons';
 import { useAppStore, CATEGORY_CONFIGS } from '@/stores/useAppStore';
 
@@ -1175,8 +1386,125 @@ function updateWorkerCategory(catName) {
   showToast.value = true;
 }
 
+// ================= PERFIL GAMIFICADO & MÉTODOS DE PAGAMENTO =================
+const profileSubTab = ref('dados'); // 'dados' | 'xp'
+const bioDraft = ref(store.workerProfile.bio || '');
+const newCourseTitle = ref('');
+const newCourseInst = ref('');
+const newCertTitle = ref('');
+const newCertIssuer = ref('');
+
+const suggestedCourses = [
+  { title: 'Coquetelaria & Drinks Autorais', institution: 'Instituto Gourmet • 36h' },
+  { title: 'Atendimento VIP em Eventos', institution: 'SENAC Roraima • 24h' },
+  { title: 'Primeiros Socorros & Segurança', institution: 'Cruz Vermelha • 20h' }
+];
+
+const suggestedCertificates = [
+  { title: 'Certificado SENAC Hospitalidade', issuer: 'SENAC Nacional • 2026' },
+  { title: 'Certificação Técnica NR-10 / Segurança', issuer: 'SENAI • Verificado' },
+  { title: 'Selo Manipulação Segura ANVISA', issuer: 'Vigilância Sanitária • 2026' }
+];
+
+function toggleWorkerPaymentMethod(methodKey) {
+  if (!store.workerProfile.paymentMethods) {
+    store.workerProfile.paymentMethods = {
+      fisico: true,
+      pix: true,
+      cartao: false,
+      hasCardMachine: false
+    };
+  }
+  store.workerProfile.paymentMethods[methodKey] = !store.workerProfile.paymentMethods[methodKey];
+  if (methodKey === 'cartao' && store.workerProfile.paymentMethods.cartao) {
+    store.workerProfile.paymentMethods.hasCardMachine = true;
+  }
+}
+
+function handleSavePersonalAndPayments() {
+  store.saveWorkerPersonalAndPayment({
+    name: store.workerProfile.name,
+    phone: store.workerProfile.phone,
+    location: store.workerProfile.location,
+    pixKey: store.workerProfile.pixKey,
+    paymentMethods: store.workerProfile.paymentMethods
+  });
+  toastMsg.value = 'Dados pessoais e métodos de recebimento salvos com sucesso!';
+  showToast.value = true;
+}
+
+function handleSaveGamifiedBio() {
+  if (!bioDraft.value || !bioDraft.value.trim()) {
+    toastMsg.value = 'Escreva sua biografia profissional antes de salvar.';
+    showToast.value = true;
+    return;
+  }
+  const res = store.saveWorkerBio(bioDraft.value);
+  if (res.ok) {
+    toastMsg.value = res.leveledUp
+      ? `🎉 +150 XP pela Bio! Você subiu para o Nível ${res.newLevel}!`
+      : '⚡ +150 XP adicionados ao seu perfil pela atualização da Bio!';
+    showToast.value = true;
+  }
+}
+
+function handleAddCourse() {
+  if (!newCourseTitle.value.trim()) {
+    toastMsg.value = 'Informe o nome do curso ou toque em uma sugestão rápida.';
+    showToast.value = true;
+    return;
+  }
+  const res = store.addWorkerCourse(newCourseTitle.value, newCourseInst.value || 'Capacitação Profissional');
+  if (res.ok) {
+    newCourseTitle.value = '';
+    newCourseInst.value = '';
+    toastMsg.value = res.leveledUp
+      ? `🎉 +200 XP pelo novo curso! Você subiu para o Nível ${res.newLevel}!`
+      : '🎓 +200 XP adicionados! Curso incluído no seu perfil.';
+    showToast.value = true;
+  }
+}
+
+function quickAddCourse(sug) {
+  const res = store.addWorkerCourse(sug.title, sug.institution);
+  if (res.ok) {
+    toastMsg.value = res.leveledUp
+      ? `🎉 +200 XP! Curso "${sug.title}" adicionado e Nível ${res.newLevel} alcançado!`
+      : `🎓 +200 XP! Curso "${sug.title}" adicionado ao perfil.`;
+    showToast.value = true;
+  }
+}
+
+function handleAddCertificate() {
+  if (!newCertTitle.value.trim()) {
+    toastMsg.value = 'Informe o nome do certificado ou toque em uma sugestão rápida.';
+    showToast.value = true;
+    return;
+  }
+  const res = store.addWorkerCertificate(newCertTitle.value, newCertIssuer.value || 'Certificação Verificada');
+  if (res.ok) {
+    newCertTitle.value = '';
+    newCertIssuer.value = '';
+    toastMsg.value = res.leveledUp
+      ? `🎉 +300 XP pelo certificado! Você subiu para o Nível ${res.newLevel}!`
+      : '📜 +300 XP adicionados! Certificado verificado no perfil.';
+    showToast.value = true;
+  }
+}
+
+function quickAddCertificate(sug) {
+  const res = store.addWorkerCertificate(sug.title, sug.issuer);
+  if (res.ok) {
+    toastMsg.value = res.leveledUp
+      ? `🎉 +300 XP! Certificado "${sug.title}" adicionado e Nível ${res.newLevel} alcançado!`
+      : `📜 +300 XP! Certificado "${sug.title}" adicionado ao perfil.`;
+    showToast.value = true;
+  }
+}
+
 function handleResetDemo() {
   store.resetPresentation();
+  bioDraft.value = store.workerProfile.bio || '';
   selectedJobFilter.value = 'Todos';
   weekendOnlyMode.value = true;
   seedDemoBusyDays();
@@ -2294,15 +2622,209 @@ function handleResetDemo() {
   color: #f87171;
 }
 
-/* ================= PERFIL DO PRESTADOR ================= */
+/* ================= PERFIL DO PRESTADOR (GAMIFICADO & MÉTODOS DE PAGAMENTO) ================= */
 .profile-main-card {
   background: #070a10;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 15px;
+  padding: 15px 13px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
+
+.profile-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mini-auth-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border-radius: 99px;
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.xp-minimal-box {
+  background: #0c111b;
+  border: 1px solid rgba(212, 255, 36, 0.25);
+  border-radius: 12px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.xp-min-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.xp-min-row strong {
+  color: #D4FF24;
+  font-weight: 800;
+}
+
+.profile-sub-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #0b0f18;
+  padding: 4px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.p-sub-tab {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.p-sub-tab.active {
+  background: #D4FF24;
+  color: #05070b;
+  font-weight: 800;
+}
+
+.profile-clean-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.pm-minimal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.pm-mini-card {
+  background: #0f1522;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.pm-mini-card ion-icon {
+  font-size: 18px;
+  color: #9ca3af;
+}
+
+.pm-mini-card span {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.pm-req-tag {
+  font-size: 8.5px;
+  color: #facc15;
+  font-weight: 800;
+}
+
+.pm-mini-card.active {
+  background: rgba(212, 255, 36, 0.11);
+  border-color: #D4FF24;
+  color: #ffffff;
+}
+
+.pm-mini-card.active ion-icon {
+  color: #D4FF24;
+}
+
+.mt-6 {
+  margin-top: 6px;
+}
+
+.machine-inline-check {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #fef08a;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px dashed rgba(250, 204, 21, 0.35);
+  padding: 7px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.gamified-clean-block {
+  background: #0c111b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.g-head-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gb-item-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-auth-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.auth-shortcut-pill {
+  background: #0c121e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.auth-shortcut-pill.neon-outline {
+  background: rgba(212, 255, 36, 0.1);
+  border-color: rgba(212, 255, 36, 0.38);
+  color: #D4FF24;
 }
 
 .profile-top-avatar-row {
@@ -2313,11 +2835,12 @@ function handleResetDemo() {
 
 .avatar-ring-box {
   position: relative;
+  flex-shrink: 0;
 }
 
 .worker-avatar-img {
-  width: 58px;
-  height: 58px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #D4FF24;
@@ -2331,7 +2854,7 @@ function handleResetDemo() {
   color: #05070b;
   font-size: 9.5px;
   font-weight: 900;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 99px;
 }
 
@@ -2340,6 +2863,7 @@ function handleResetDemo() {
   font-weight: 800;
   color: #D4FF24;
   letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 
 .worker-name-big {
@@ -2373,23 +2897,52 @@ function handleResetDemo() {
   margin-bottom: 6px;
 }
 
-.xp-container {
-  background: #0b0f17;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 11px;
-  padding: 10px;
+/* Card Gamificado de XP */
+.xp-container.gamified-xp-card {
+  background: linear-gradient(145deg, #0b101b 0%, #0f1726 100%);
+  border: 1px solid rgba(212, 255, 36, 0.32);
+  border-radius: 14px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
-.xp-labels-row {
+.xp-header-top {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.xp-kicker-tag {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #D4FF24;
+  letter-spacing: 0.5px;
+}
+
+.xp-level-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 2px 0 0;
+}
+
+.xp-counter-badge {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
   font-size: 11px;
-  color: #cbd5e1;
-  margin-bottom: 5px;
+  font-weight: 900;
+  padding: 4px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
 }
 
 .xp-bar-track {
-  height: 6px;
+  height: 8px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 99px;
   overflow: hidden;
@@ -2397,8 +2950,502 @@ function handleResetDemo() {
 
 .xp-bar-fill {
   height: 100%;
-  background: #D4FF24;
+  background: linear-gradient(90deg, #a3e635 0%, #D4FF24 100%);
   border-radius: 99px;
+  box-shadow: 0 0 10px rgba(212, 255, 36, 0.5);
+  transition: width 0.35s ease;
+}
+
+.xp-remaining-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.38;
+}
+
+.xp-remaining-hint strong {
+  color: #D4FF24;
+}
+
+.xp-reward-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xp-reward-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.xp-reward-chip strong {
+  color: #D4FF24;
+}
+
+/* Seções Internas do Perfil */
+.profile-section-card {
+  background: #0b0f18;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 13px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.prof-sec-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prof-sec-kicker {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #D4FF24;
+  letter-spacing: 0.6px;
+}
+
+.prof-sec-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.prof-sec-sub {
+  font-size: 11.5px;
+  color: #9ca3af;
+  margin: 2px 0 0;
+  line-height: 1.35;
+}
+
+.prof-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prof-two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.prof-field-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prof-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.prof-dark-input {
+  width: 100%;
+  background: #121826;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 9px 11px;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.prof-dark-input:focus,
+.prof-dark-textarea:focus {
+  border-color: #D4FF24;
+}
+
+.prof-dark-textarea {
+  width: 100%;
+  background: #121826;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 9px 11px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* Caixa de Métodos de Pagamento Preferidos */
+.pm-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-select-row {
+  background: #111724;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.pm-select-row.active {
+  background: rgba(212, 255, 36, 0.09);
+  border-color: #D4FF24;
+}
+
+.pm-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pm-row-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(212, 255, 36, 0.13);
+  color: #D4FF24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.pm-row-left strong {
+  display: block;
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.pm-row-left span {
+  display: block;
+  font-size: 10.5px;
+  color: #9ca3af;
+  line-height: 1.3;
+}
+
+.pm-title-badge-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.machine-warning-pill {
+  background: rgba(250, 204, 21, 0.14);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #facc15;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.pm-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: #05070b;
+  flex-shrink: 0;
+}
+
+.pm-checkbox.checked {
+  background: #D4FF24;
+  border-color: #D4FF24;
+}
+
+.pm-sub-input-box {
+  background: #0d121d;
+  border: 1px solid rgba(212, 255, 36, 0.22);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.machine-alert-banner {
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px dashed rgba(250, 204, 21, 0.42);
+  border-radius: 10px;
+  padding: 9px 10px;
+}
+
+.machine-confirm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: #fef08a;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.save-profile-data-btn {
+  width: 100%;
+  background: #D4FF24;
+  color: #05070b;
+  border: none;
+  border-radius: 11px;
+  padding: 11px 12px;
+  font-size: 12.5px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Blocos Gamificados (Bio, Cursos, Certificados) */
+.gamified-block-item {
+  background: #101623;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.gb-top-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gb-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gb-emoji {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.gb-title-group strong {
+  display: block;
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.gb-title-group span {
+  display: block;
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+
+.gb-xp-tag {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.38);
+  color: #D4FF24;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gb-xp-tag.highlight {
+  background: #D4FF24;
+  color: #05070b;
+}
+
+.gb-action-btn {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.45);
+  color: #D4FF24;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.quick-add-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.quick-chip-hint {
+  font-size: 10px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.quick-add-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(212, 255, 36, 0.35);
+  color: #e2e8f0;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+.quick-add-pill:active {
+  background: rgba(212, 255, 36, 0.2);
+}
+
+.gb-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gb-form-row-2 {
+  display: flex;
+  gap: 6px;
+}
+
+.gb-add-submit-btn {
+  background: #D4FF24;
+  color: #05070b;
+  border: none;
+  border-radius: 10px;
+  padding: 0 13px;
+  font-size: 11.5px;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.gb-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.gb-earned-row {
+  background: #0a0e17;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gb-earned-info {
+  min-width: 0;
+}
+
+.gb-earned-info strong {
+  display: block;
+  font-size: 11.5px;
+  color: #ffffff;
+}
+
+.gb-earned-info span {
+  display: block;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.gb-earned-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.earned-xp-pill {
+  font-size: 10px;
+  font-weight: 800;
+  color: #D4FF24;
+  background: rgba(212, 255, 36, 0.12);
+  padding: 2px 6px;
+  border-radius: 99px;
+}
+
+.gb-remove-btn {
+  background: rgba(248, 113, 113, 0.12);
+  border: none;
+  color: #f87171;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.xp-history-mini-box {
+  background: #080c14;
+  border: 1px solid rgba(212, 255, 36, 0.2);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.xp-hist-label {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #D4FF24;
+  letter-spacing: 0.5px;
+}
+
+.xp-hist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.xp-hist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.xp-hist-row strong {
+  color: #D4FF24;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .prof-two-cols,
+  .profile-auth-shortcuts {
+    grid-template-columns: 1fr;
+  }
 }
 
 .neon-icon {

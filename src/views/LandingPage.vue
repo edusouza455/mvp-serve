@@ -15,6 +15,10 @@
               <span>Boa Vista</span>
             </span>
 
+            <button type="button" class="mobile-login-pill" @click="router.push('/login')">
+              <span>Entrar</span>
+            </button>
+
             <button type="button" class="mobile-provider-pill" @click="goToProvider">
               <ion-icon :icon="briefcaseOutline"></ion-icon>
               <span>Sou Prestador</span>
@@ -331,6 +335,19 @@ function goToProvider() {
 .loc-icon {
   color: #D4FF24;
   font-size: 13px;
+}
+
+.mobile-login-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .mobile-provider-pill {
@@ -771,7 +788,20 @@ function goToProvider() {
     padding: 4px 6px;
     font-size: 10px;
   }
-  .mobile-provider-pill {
+  .mobile-login-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.mobile-provider-pill {
     padding: 4px 8px;
     font-size: 10px;
   }

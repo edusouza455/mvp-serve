@@ -9,6 +9,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/LandingPage.vue')
   },
   {
+    path: '/login',
+    alias: ['/cadastro', '/register', '/auth'],
+    name: 'AuthPage',
+    component: () => import('@/views/AuthPage.vue')
+  },
+  {
     path: '/client',
     redirect: '/client/dashboard'
   },
