@@ -86,7 +86,7 @@
         <span class="tab-label">Busca</span>
       </button>
 
-      <!-- 3. PEDIDOS -->
+      <!-- 3. SOLICITAÇÕES -->
       <button
         type="button"
         class="nav-tab-btn"
@@ -97,7 +97,7 @@
           <ion-icon :icon="activeTab === 'orders' ? receipt : receiptOutline" class="tab-icon"></ion-icon>
           <span v-if="ongoingOrdersCount > 0" class="tab-badge-count">{{ ongoingOrdersCount }}</span>
         </div>
-        <span class="tab-label">Pedidos</span>
+        <span class="tab-label">Solicitações</span>
       </button>
 
       <!-- 4. PERFIL -->
@@ -116,89 +116,174 @@
     </div>
   </nav>
 
-  <!-- ================= MODAL GLOBAL 1: MEUS PEDIDOS ================= -->
+  <!-- ================= MODAL GLOBAL 1: MINHAS SOLICITAÇÕES (ESTILO INDRIVE EXPANSÍVEL) ================= -->
   <ion-modal
     :is-open="store.ordersModalOpen"
-    :breakpoints="[0, 0.8, 0.95]"
-    :initial-breakpoint="0.8"
+    :breakpoints="[0, 0.85, 0.96]"
+    :initial-breakpoint="0.85"
     @didDismiss="store.ordersModalOpen = false"
     class="global-sheet-modal"
   >
     <ion-content class="sheet-content ion-padding">
       <div class="sheet-header">
         <div>
-          <h2 class="sheet-title">Meus Pedidos</h2>
-          <p class="sheet-subtitle">Acompanhe contratações ativas, converse no chat ou avalie</p>
+          <h2 class="sheet-title">Minhas Solicitações</h2>
+          <p class="sheet-subtitle">Toque em uma solicitação para ver as propostas e fechar acordo</p>
         </div>
         <button class="sheet-close-btn" @click="store.ordersModalOpen = false">✕</button>
       </div>
 
       <div v-if="store.ordersList.length === 0" class="empty-orders-box">
         <ion-icon :icon="receiptOutline" class="empty-orders-icon"></ion-icon>
-        <h4>Nenhum pedido ativo</h4>
-        <p>Escolha um profissional na aba Busca para fazer sua primeira solicitação.</p>
-        <button class="go-search-btn" @click="goToSearchFromOrders">Buscar Profissionais</button>
+        <h4>Nenhuma solicitação ativa</h4>
+        <p>Crie uma solicitação na aba Busca para receber propostas de prestadores.</p>
+        <button class="go-search-btn" @click="goToSearchFromOrders">Nova Solicitação</button>
       </div>
 
       <div v-else class="orders-stack">
         <div
           v-for="ord in store.ordersList"
           :key="ord.id"
-          class="order-item-card"
+          class="order-item-card indrive-req-card"
+          :class="{ expanded: isOrderExpanded(ord.id) }"
         >
-          <div class="order-top-row">
-            <span class="order-cat-badge">{{ ord.categoria }}</span>
-            <span
-              class="order-status-pill"
-              :class="{
-                done: ord.status === 'COMPLETED',
-                cancelled: ord.status === 'CANCELLED' || ord.status === 'REJECTED',
-                ongoing: ord.status !== 'COMPLETED' && ord.status !== 'CANCELLED' && ord.status !== 'REJECTED'
-              }"
-            >
-              {{ ord.statusLabel }}
-            </span>
-          </div>
+          <!-- CAIXA FECHADA / HEADER CLICÁVEL DA SOLICITAÇÃO -->
+          <div class="req-clickable-header" @click="toggleOrderExpansion(ord.id)">
+            <div class="order-top-row">
+              <span class="order-cat-badge">{{ ord.categoria }}</span>
 
-          <h4 class="order-title">{{ ord.title }}</h4>
-
-          <div class="order-meta-line">
-            <span>📅 {{ ord.date }} • {{ ord.time }}</span>
-            <strong class="order-price">R$ {{ ord.budget || ord.price || 180 }},00</strong>
-          </div>
-
-          <div class="order-pro-footer">
-            <div class="order-pro-info">
-              <img :src="ord.professional?.avatar" alt="Profissional" class="order-pro-avatar" />
-              <div>
-                <strong class="order-pro-name">{{ ord.professional?.name || ord.professional?.nome }}</strong>
-                <span class="order-pro-rating">★ {{ ord.professional?.rating || ord.professional?.nota || '5,0' }}</span>
+              <div class="req-top-right">
+                <span
+                  class="order-status-pill"
+                  :class="{
+                    done: ord.status === 'COMPLETED' || ord.acceptedProposalId,
+                    cancelled: ord.status === 'CANCELLED' || ord.status === 'REJECTED',
+                    ongoing: ord.status === 'IN_PROGRESS' && !ord.acceptedProposalId
+                  }"
+                >
+                  {{ getOrderBadgeText(ord) }}
+                </span>
+                <span class="req-expand-arrow">{{ isOrderExpanded(ord.id) ? '▴' : '▾' }}</span>
               </div>
             </div>
 
-            <div class="order-actions">
-              <button class="btn-order-chat" @click="openOrderChat(ord)">
-                <ion-icon :icon="chatbubbleOutline"></ion-icon>
-                <span>Chat</span>
-              </button>
+            <h4 class="order-title">{{ ord.title }}</h4>
 
+            <div class="order-meta-line compact-meta">
+              <span>📅 {{ ord.date }} • {{ ord.time }}</span>
+              <span class="client-offer-label">
+                Sua oferta: <strong class="order-price">R$ {{ ord.offeredPrice || ord.budget || 180 }}</strong>
+              </span>
+            </div>
+          </div>
+
+          <!-- CONTEÚDO EXPANDIDO: 3 PROPOSTAS DISPUTANDO (FIEL AO INDRIVE) -->
+          <div v-if="isOrderExpanded(ord.id)" class="req-expanded-body">
+            <div class="proposals-sub-header">
+              <span>
+                {{
+                  ord.acceptedProposalId
+                    ? 'PRESTADOR ESCOLHIDO & OUTROS INTERESSADOS'
+                    : `PROPOSTAS RECEBIDAS (${ord.proposals?.length || 1})`
+                }}
+              </span>
               <button
                 v-if="ord.status === 'IN_PROGRESS'"
-                class="btn-order-complete"
-                @click="openOrderChat(ord)"
+                type="button"
+                class="cancel-req-text-btn"
+                @click.stop="store.cancelOrder(ord.id)"
               >
-                <ion-icon :icon="checkmarkCircle"></ion-icon>
-                <span>Concluir</span>
+                Cancelar solicitação
               </button>
+            </div>
 
-              <button
-                v-if="ord.status === 'IN_PROGRESS'"
-                class="btn-order-cancel"
-                @click="store.cancelOrder(ord.id)"
-                title="Cancelar pedido"
+            <div class="indrive-proposals-list">
+              <div
+                v-for="prop in getOrderProposals(ord)"
+                :key="prop.id"
+                class="indrive-bid-card"
+                :class="{
+                  'client-choice-highlight': prop.isClientChoice,
+                  'accepted-bid-highlight': ord.acceptedProposalId === prop.id
+                }"
               >
-                ✕
-              </button>
+                <!-- Flags de Topo da Proposta: Sua Escolha + Tipo da Oferta -->
+                <div class="bid-top-flags">
+                  <div class="bid-flags-left">
+                    <span v-if="prop.isClientChoice" class="flag-client-choice">
+                      ★ Sua escolha
+                    </span>
+                    <span
+                      v-if="ord.acceptedProposalId === prop.id"
+                      class="flag-accepted-deal"
+                    >
+                      ✓ Escolhido
+                    </span>
+                    <span
+                      class="flag-bid-type"
+                      :class="{ counter: prop.price > (ord.offeredPrice || ord.budget) }"
+                    >
+                      {{ prop.tag }}
+                    </span>
+                  </div>
+
+                  <strong class="bid-price-big">R$ {{ prop.price }}</strong>
+                </div>
+
+                <!-- Dados do Prestador -->
+                <div class="bid-pro-row">
+                  <div class="order-pro-info">
+                    <img :src="prop.pro?.avatar" alt="Prestador" class="order-pro-avatar" />
+                    <div>
+                      <strong class="order-pro-name">{{ prop.pro?.name || prop.pro?.nome }}</strong>
+                      <span class="order-pro-rating">
+                        ★ {{ prop.pro?.nota || prop.pro?.rating || '4,9' }}
+                        <i class="bid-jobs-count">• {{ prop.pro?.servicos || 32 }} serv.</i>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Botões de Ação da Proposta -->
+                  <div class="bid-actions-group">
+                    <!-- Quando este prestador já foi aceito (ou solicitação concluída) -->
+                    <template v-if="ord.acceptedProposalId === prop.id || ord.status === 'COMPLETED'">
+                      <button type="button" class="btn-order-chat" @click.stop="openProposalChat(ord, prop)">
+                        <ion-icon :icon="chatbubbleOutline"></ion-icon>
+                        <span>Chat</span>
+                      </button>
+
+                      <button
+                        v-if="ord.status === 'IN_PROGRESS'"
+                        type="button"
+                        class="btn-order-complete"
+                        @click.stop="openProposalChat(ord, prop)"
+                      >
+                        <ion-icon :icon="checkmarkCircle"></ion-icon>
+                        <span>Concluir</span>
+                      </button>
+                    </template>
+
+                    <!-- Quando a proposta está em disputa (Aceitar / Recusar estilo inDrive) -->
+                    <template v-else-if="ord.status === 'IN_PROGRESS'">
+                      <button
+                        type="button"
+                        class="btn-bid-decline"
+                        @click.stop="handleDeclineProposal(ord.id, prop.id)"
+                        title="Recusar esta proposta"
+                      >
+                        Recusar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-bid-accept"
+                        @click.stop="handleAcceptProposal(ord, prop)"
+                      >
+                        Aceitar
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -281,14 +366,14 @@
           <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
         </div>
 
-        <!-- Atalho para Meus Pedidos (Modo Cliente) -->
+        <!-- Atalho para Minhas Solicitações (Modo Cliente) -->
         <div v-if="!isProviderMode" class="profile-menu-item" @click="switchToOrdersFromProfile">
           <div class="menu-item-icon">
             <ion-icon :icon="receiptOutline"></ion-icon>
           </div>
           <div class="menu-item-text">
-            <h4>Histórico de Pedidos ({{ store.ordersList.length }})</h4>
-            <p>Acompanhe agendamentos e avaliações realizadas.</p>
+            <h4>Minhas Solicitações ({{ store.ordersList.length }})</h4>
+            <p>Compare propostas de prestadores e acompanhe agendamentos.</p>
           </div>
           <ion-icon :icon="arrowForwardOutline" class="menu-arrow"></ion-icon>
         </div>
@@ -363,6 +448,59 @@ const route = useRoute();
 const store = useAppStore();
 
 const resetToastOpen = ref(false);
+const expandedOrdersMap = ref({});
+
+function isOrderExpanded(orderId) {
+  return Boolean(expandedOrdersMap.value[orderId]);
+}
+
+function toggleOrderExpansion(orderId) {
+  expandedOrdersMap.value = {
+    ...expandedOrdersMap.value,
+    [orderId]: !expandedOrdersMap.value[orderId]
+  };
+}
+
+function getOrderProposals(ord) {
+  if (Array.isArray(ord.proposals) && ord.proposals.length > 0) {
+    return ord.proposals;
+  }
+  return [
+    {
+      id: `prop-fallback-${ord.id}`,
+      isClientChoice: true,
+      price: ord.budget || ord.price || 180,
+      tag: 'Aceitou sua oferta',
+      pro: ord.professional
+    }
+  ];
+}
+
+function getOrderBadgeText(ord) {
+  if (ord.status === 'COMPLETED') return 'Concluído';
+  if (ord.status === 'CANCELLED') return 'Cancelado';
+  if (ord.status === 'REJECTED') return 'Recusado';
+  if (ord.acceptedProposalId) return '✓ Acordo Fechado';
+  const count = getOrderProposals(ord).length;
+  return `${count} ${count === 1 ? 'proposta' : 'propostas'}`;
+}
+
+function handleAcceptProposal(ord, prop) {
+  store.acceptOrderProposal(ord.id, prop.id);
+}
+
+function handleDeclineProposal(orderId, propId) {
+  store.declineOrderProposal(orderId, propId);
+}
+
+function openProposalChat(ord, prop) {
+  store.ordersModalOpen = false;
+  store.openChatWithPro(prop.pro || ord.professional, {
+    ...ord,
+    budget: prop.price || ord.budget,
+    price: prop.price || ord.price
+  });
+}
 
 // Mantém store.role estritamente alinhado à rota para nunca exibir ícones do prestador na Home
 watch(
@@ -412,8 +550,11 @@ async function handleProviderTab(tabName) {
   closeAllGlobalModals();
   store.role = 'PROVIDER';
   store.providerTab = tabName;
+  const nextQuery = tabName === 'servicos' ? {} : { tab: tabName };
   if (!route.path.startsWith('/provider')) {
-    await router.push('/provider');
+    await router.push({ path: '/provider', query: nextQuery });
+  } else {
+    await router.replace({ path: '/provider', query: nextQuery });
   }
 }
 
@@ -724,10 +865,197 @@ function handleResetPresentation() {
 }
 
 .order-item-card {
-  background: #111622;
+  background: #101521;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 14px;
+  padding: 13px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.order-item-card.indrive-req-card.expanded {
+  border-color: rgba(212, 255, 36, 0.35);
+  background: #0d121c;
+}
+
+.req-clickable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.req-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.req-expand-arrow {
+  color: #D4FF24;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.order-meta-line.compact-meta {
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.client-offer-label {
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.req-expanded-body {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.proposals-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.proposals-sub-header span {
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+}
+
+.cancel-req-text-btn {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.indrive-proposals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.indrive-bid-card {
+  background: #141b2a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.indrive-bid-card.client-choice-highlight {
+  border-color: rgba(212, 255, 36, 0.38);
+  background: linear-gradient(145deg, #131b29 0%, #16201c 100%);
+}
+
+.indrive-bid-card.accepted-bid-highlight {
+  border-color: #4ade80;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.bid-top-flags {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.bid-flags-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.flag-client-choice {
+  background: #D4FF24;
+  color: #050800;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.flag-accepted-deal {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.flag-bid-type {
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.flag-bid-type.counter {
+  background: rgba(250, 204, 21, 0.14);
+  color: #facc15;
+}
+
+.bid-price-big {
+  font-size: 14px;
+  font-weight: 900;
+  color: #D4FF24;
+  white-space: nowrap;
+}
+
+.bid-pro-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bid-jobs-count {
+  font-style: normal;
+  color: #9ca3af;
+}
+
+.bid-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-bid-decline {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-bid-accept {
+  background: #D4FF24;
+  color: #050800;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .order-top-row {

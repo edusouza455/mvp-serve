@@ -1409,7 +1409,7 @@ export const useAppStore = defineStore('app', () => {
     }
   ]);
 
-  // Pedidos do Cliente (Meus Pedidos)
+  // Solicitações do Cliente (Minhas Solicitações - Modelo Leilão inDrive)
   const initialOrdersList = [
     {
       id: 'ord-101',
@@ -1418,19 +1418,74 @@ export const useAppStore = defineStore('app', () => {
       date: '15/08/2026',
       time: '17:00 às 00:00',
       location: 'Espaço Villa Real • Boa Vista - RR',
-      budget: 220,
-      price: 220,
+      offeredPrice: 200,
+      budget: 200,
+      price: 200,
       status: 'IN_PROGRESS',
-      statusLabel: 'Em andamento',
+      statusLabel: '3 propostas',
+      acceptedProposalId: null,
       rated: false,
       professional: {
-        id: 1,
-        name: 'João Silva',
-        nome: 'João Silva',
+        id: 2,
+        name: 'Carlos Mendes',
+        nome: 'Carlos Mendes',
         categoria: 'Garçom',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-        rating: '5,0'
-      }
+        avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
+        rating: '4,8'
+      },
+      proposals: [
+        {
+          id: 'prop-101-1',
+          isClientChoice: true,
+          price: 200,
+          tag: 'Aceitou sua oferta',
+          note: 'Livre na data • Experiência em eventos sociais',
+          pro: {
+            id: 2,
+            name: 'Carlos Mendes',
+            nome: 'Carlos Mendes',
+            categoria: 'Garçom',
+            avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
+            rating: '4,8',
+            nota: '4,8',
+            servicos: 32
+          }
+        },
+        {
+          id: 'prop-101-2',
+          isClientChoice: false,
+          price: 220,
+          tag: 'Contraproposta',
+          note: 'Garçom líder • Traje social completo incluso',
+          pro: {
+            id: 1,
+            name: 'João Silva',
+            nome: 'João Silva',
+            categoria: 'Garçom',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+            rating: '5,0',
+            nota: '5,0',
+            servicos: 47
+          }
+        },
+        {
+          id: 'prop-101-3',
+          isClientChoice: false,
+          price: 190,
+          tag: 'Oferta menor',
+          note: 'Disponível no horário • Atendimento ágil',
+          pro: {
+            id: 3,
+            name: 'Rafael Souza',
+            nome: 'Rafael Souza',
+            categoria: 'Garçom',
+            avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+            rating: '4,7',
+            nota: '4,7',
+            servicos: 28
+          }
+        }
+      ]
     },
     {
       id: 'ord-102',
@@ -1439,10 +1494,12 @@ export const useAppStore = defineStore('app', () => {
       date: '28/10/2026',
       time: '14:00',
       location: 'Centro • Boa Vista - RR',
+      offeredPrice: 150,
       budget: 150,
       price: 150,
       status: 'COMPLETED',
       statusLabel: 'Concluído',
+      acceptedProposalId: 'prop-102-1',
       rated: true,
       userRating: 5,
       professional: {
@@ -1452,7 +1509,26 @@ export const useAppStore = defineStore('app', () => {
         categoria: 'Eletricista',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
         rating: '5,0'
-      }
+      },
+      proposals: [
+        {
+          id: 'prop-102-1',
+          isClientChoice: true,
+          price: 150,
+          tag: 'Acordo fechado',
+          note: 'Atendimento concluído e avaliado',
+          pro: {
+            id: 8,
+            name: 'Carlos Oliveira',
+            nome: 'Carlos Oliveira',
+            categoria: 'Eletricista',
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+            rating: '5,0',
+            nota: '5,0',
+            servicos: 64
+          }
+        }
+      ]
     }
   ];
 
@@ -1726,10 +1802,62 @@ export const useAppStore = defineStore('app', () => {
     proDetailModalOpen.value = true;
   }
 
+  function buildCompetingProposals(categoryName, offeredPrice, clientChosenPro = null) {
+    const baseVal = Number(offeredPrice) || 180;
+    const categoryPool = [
+      ...availableProfessionals.value.filter(p => p.categoria === categoryName),
+      ...highlightedProfessionals.value.filter(p => p.categoria === categoryName)
+    ];
+    const fallbackPool = [...availableProfessionals.value, ...highlightedProfessionals.value];
+    const pool = categoryPool.length >= 3 ? categoryPool : [...categoryPool, ...fallbackPool];
+
+    const pickedPros = [];
+    if (clientChosenPro && (clientChosenPro.id || clientChosenPro.nome || clientChosenPro.name)) {
+      pickedPros.push({ pro: normalizePro(clientChosenPro), isChoice: true });
+    }
+
+    for (const candidate of pool) {
+      if (pickedPros.length >= 3) break;
+      const cName = candidate.nome || candidate.name;
+      if (!pickedPros.some(item => (item.pro.nome || item.pro.name) === cName)) {
+        pickedPros.push({ pro: normalizePro(candidate), isChoice: false });
+      }
+    }
+
+    return pickedPros.slice(0, 3).map((entry, idx) => {
+      let propPrice = baseVal;
+      let tag = 'Aceitou sua oferta';
+      let note = 'Disponível na data • Atendimento imediato';
+
+      if (idx === 1) {
+        propPrice = baseVal + 20;
+        tag = 'Contraproposta';
+        note = 'Equipamento e materiais completos inclusos';
+      } else if (idx === 2) {
+        propPrice = Math.max(50, baseVal - 10);
+        tag = 'Oferta competitiva';
+        note = 'Livre no horário • Avaliação verificada';
+      }
+
+      return {
+        id: `prop-${Date.now()}-${idx + 1}`,
+        isClientChoice: entry.isChoice,
+        price: propPrice,
+        tag,
+        note,
+        pro: {
+          ...entry.pro,
+          servicos: entry.pro.servicos || (35 - idx * 6)
+        }
+      };
+    });
+  }
+
   function createNewOrder(proOrData = null) {
     const isDirectPro = proOrData && (proOrData.nome || proOrData.name || proOrData.especialidade);
-    const rawPro = isDirectPro ? proOrData : (proOrData?.professional || selectedProfessional.value || highlightedProfessionals.value[0]);
-    const pro = normalizePro(rawPro);
+    const explicitPro = isDirectPro ? proOrData : (proOrData?.professional || selectedProfessional.value || null);
+    const fallbackPro = explicitPro || highlightedProfessionals.value[0];
+    const pro = normalizePro(fallbackPro);
     const cat = (!isDirectPro && proOrData?.categoria) || eventForm.value.categoria;
     const tipo = (!isDirectPro && proOrData?.tipoEvento) || eventForm.value.tipoEvento;
     const escopo = (!isDirectPro && proOrData?.qtdProfissionais) || eventForm.value.qtdProfissionais;
@@ -1740,6 +1868,8 @@ export const useAppStore = defineStore('app', () => {
     const locText = (!isDirectPro && proOrData?.local) || eventForm.value.local || 'Boa Vista - RR';
     const descText = (!isDirectPro && proOrData?.descricao) || eventForm.value.descricao || `Atendimento de ${cat.toLowerCase()} (${tipo.toLowerCase()}).`;
 
+    const competingProposals = buildCompetingProposals(cat, priceVal, explicitPro);
+
     const newOrd = {
       id: `ord-${Date.now()}`,
       categoria: cat,
@@ -1748,15 +1878,18 @@ export const useAppStore = defineStore('app', () => {
       time: `${startTime} às ${endTime}`,
       location: locText,
       description: descText,
+      offeredPrice: priceVal,
       budget: priceVal,
       price: priceVal,
       status: 'IN_PROGRESS',
-      statusLabel: 'Aguardando Atendimento',
+      statusLabel: `${competingProposals.length} propostas`,
+      acceptedProposalId: null,
       providerAccepted: false,
       clientAccepted: true,
       serviceCompleted: false,
       rated: false,
-      professional: pro
+      professional: pro,
+      proposals: competingProposals
     };
 
     ordersList.value.unshift(newOrd);
@@ -1788,6 +1921,34 @@ export const useAppStore = defineStore('app', () => {
     });
 
     return newOrd;
+  }
+
+  // Aceitar uma das 3 propostas disputando dentro de uma Solicitação (Modelo inDrive)
+  function acceptOrderProposal(orderId, proposalId) {
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (!ord || !Array.isArray(ord.proposals)) return null;
+    const chosen = ord.proposals.find(p => p.id === proposalId);
+    if (!chosen) return null;
+
+    ord.acceptedProposalId = chosen.id;
+    ord.professional = chosen.pro;
+    ord.budget = chosen.price;
+    ord.price = chosen.price;
+    ord.providerAccepted = true;
+    ord.clientAccepted = true;
+    ord.statusLabel = 'Acordo Fechado';
+    return chosen;
+  }
+
+  // Recusar uma proposta individual dentro da Solicitação
+  function declineOrderProposal(orderId, proposalId) {
+    const ord = ordersList.value.find(o => o.id === orderId);
+    if (!ord || !Array.isArray(ord.proposals)) return false;
+    ord.proposals = ord.proposals.filter(p => p.id !== proposalId);
+    if (!ord.acceptedProposalId) {
+      ord.statusLabel = ord.proposals.length > 0 ? `${ord.proposals.length} propostas` : 'Aguardando';
+    }
+    return true;
   }
 
   // Confirmação pelo Prestador no Chat: "Aceito o serviço"
@@ -2314,6 +2475,8 @@ export const useAppStore = defineStore('app', () => {
     openProDetail,
     openChatWithPro,
     createNewOrder,
+    acceptOrderProposal,
+    declineOrderProposal,
     completeRequest,
     cancelOrder,
     rejectJobLead,

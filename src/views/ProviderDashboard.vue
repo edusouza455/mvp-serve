@@ -4,8 +4,8 @@
     <ion-header class="ion-no-border provider-header">
       <ion-toolbar class="provider-toolbar">
         <div class="header-inner">
-          <!-- Clicar na logo dentro do painel mantém o prestador em Meus Serviços sem sair para a Home -->
-          <div class="brand-block" @click="store.providerTab = 'servicos'">
+          <!-- Clicar na logo ou no botão Voltar dentro do painel retorna imediatamente para Meus Serviços -->
+          <div class="brand-block" @click="backToProviderServices">
             <span class="neon-plus">+</span>
             <span class="brand-name">SERVE</span>
             <span class="provider-mode-tag">PRESTADOR</span>
@@ -13,9 +13,20 @@
 
           <div class="header-right-actions">
             <button
+              v-if="store.providerTab !== 'servicos'"
+              type="button"
+              class="back-services-header-btn"
+              @click="backToProviderServices"
+              title="Voltar para Meus Serviços"
+            >
+              <ion-icon :icon="chevronBackOutline"></ion-icon>
+              <span>Voltar</span>
+            </button>
+
+            <button
               type="button"
               class="wallet-pill-btn"
-              @click="store.providerTab = 'carteira'"
+              @click="openProviderSubTab('carteira')"
               title="Abrir Carteira"
             >
               <span class="wallet-tiny-label">Saldo</span>
@@ -531,19 +542,43 @@
                 </div>
               </div>
 
+              <!-- Visualização Diferenciada de Especialidade no Perfil (Card Resumo + Gaveta sob demanda) -->
               <div class="prof-field-box">
                 <label class="prof-field-label">Especialidade</label>
-                <div class="filter-pills-scroll">
-                  <button
-                    v-for="cat in allProfileCategories"
-                    :key="cat.id"
-                    type="button"
-                    class="cat-filter-pill"
-                    :class="{ active: store.workerProfile.category === cat.name }"
-                    @click="updateWorkerCategory(cat.name)"
-                  >
-                    {{ cat.name }}
+                <div class="active-specialty-banner" @click="isEditingSpecialty = !isEditingSpecialty">
+                  <div class="asb-left">
+                    <div class="asb-badge-icon">
+                      <ion-icon :icon="shieldCheckmarkOutline"></ion-icon>
+                    </div>
+                    <div>
+                      <span class="asb-kicker">CATEGORIA PRINCIPAL</span>
+                      <strong class="asb-title">{{ store.workerProfile.category }}</strong>
+                    </div>
+                  </div>
+                  <button type="button" class="asb-change-btn">
+                    {{ isEditingSpecialty ? 'Fechar ▴' : 'Trocar ▾' }}
                   </button>
+                </div>
+
+                <div v-if="isEditingSpecialty" class="specialty-drawer-box">
+                  <input
+                    type="text"
+                    v-model="profileSpecSearch"
+                    class="prof-dark-input"
+                    placeholder="Buscar outra especialidade..."
+                  />
+                  <div class="drawer-tags-wrap">
+                    <button
+                      v-for="cat in filteredProfileCategories"
+                      :key="cat.id"
+                      type="button"
+                      class="drawer-cat-tag"
+                      :class="{ active: store.workerProfile.category === cat.name }"
+                      @click="selectProfileCategoryAndClose(cat.name)"
+                    >
+                      {{ cat.label || cat.name }}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -603,26 +638,26 @@
               </button>
             </div>
 
-            <!-- ABA INTERNA 2: CURRÍCULO GAMIFICADO (+XP) -->
+            <!-- ABA INTERNA 2: CURRÍCULO GAMIFICADO MINIMALISTA (+XP) -->
             <div v-else class="profile-clean-pane">
               <!-- 1. Bio (+150 XP) -->
               <div class="gamified-clean-block">
                 <div class="g-head-line">
-                  <label class="prof-field-label">Bio Profissional</label>
+                  <label class="prof-field-label">Bio</label>
                   <span class="gb-xp-tag">+150 XP</span>
                 </div>
                 <textarea
                   v-model="bioDraft"
                   rows="2"
                   class="prof-dark-textarea"
-                  placeholder="Resumo da sua experiência..."
+                  placeholder="Resumo curto da sua experiência..."
                 ></textarea>
                 <button type="button" class="gb-action-btn" @click="handleSaveGamifiedBio">
-                  Salvar Bio (+150 XP)
+                  Salvar Bio
                 </button>
               </div>
 
-              <!-- 2. Cursos (+200 XP) -->
+              <!-- 2. Cursos (+200 XP) — Sem chips poluídos -->
               <div class="gamified-clean-block">
                 <div class="g-head-line">
                   <label class="prof-field-label">Cursos ({{ store.workerProfile.courses?.length || 0 }})</label>
@@ -634,23 +669,11 @@
                     type="text"
                     v-model="newCourseTitle"
                     class="prof-dark-input"
-                    placeholder="Adicionar curso..."
+                    placeholder="Nome do curso..."
                     @keyup.enter="handleAddCourse"
                   />
                   <button type="button" class="gb-add-submit-btn" @click="handleAddCourse">
                     + Adicionar
-                  </button>
-                </div>
-
-                <div class="quick-add-chips">
-                  <button
-                    v-for="sugCourse in suggestedCourses.slice(0, 2)"
-                    :key="sugCourse.title"
-                    type="button"
-                    class="quick-add-pill"
-                    @click="quickAddCourse(sugCourse)"
-                  >
-                    + {{ sugCourse.title }}
                   </button>
                 </div>
 
@@ -666,36 +689,29 @@
                 </div>
               </div>
 
-              <!-- 3. Certificados (+300 XP) -->
+              <!-- 3. Certificados (+300 XP) — Upload de PDF igual ao Cadastro -->
               <div class="gamified-clean-block">
                 <div class="g-head-line">
                   <label class="prof-field-label">Certificados ({{ store.workerProfile.certificates?.length || 0 }})</label>
                   <span class="gb-xp-tag highlight">+300 XP</span>
                 </div>
 
-                <div class="gb-form-row-2">
-                  <input
-                    type="text"
-                    v-model="newCertTitle"
-                    class="prof-dark-input"
-                    placeholder="Adicionar certificado..."
-                    @keyup.enter="handleAddCertificate"
-                  />
-                  <button type="button" class="gb-add-submit-btn" @click="handleAddCertificate">
-                    + Adicionar
-                  </button>
-                </div>
+                <input
+                  ref="profileCertFileInput"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  class="hidden-file-input"
+                  @change="handleProfileCertificateFileUpload"
+                />
 
-                <div class="quick-add-chips">
-                  <button
-                    v-for="sugCert in suggestedCertificates.slice(0, 2)"
-                    :key="sugCert.title"
-                    type="button"
-                    class="quick-add-pill"
-                    @click="quickAddCertificate(sugCert)"
-                  >
-                    + {{ sugCert.title }}
-                  </button>
+                <div class="profile-pdf-dropzone" @click="triggerProfileCertUpload">
+                  <div class="pdf-drop-icon">
+                    <ion-icon :icon="cloudUploadOutline"></ion-icon>
+                  </div>
+                  <div class="pdf-drop-texts">
+                    <strong>Enviar Certificado (PDF ou Foto)</strong>
+                    <span>Toque para anexar arquivo</span>
+                  </div>
                 </div>
 
                 <div v-if="store.workerProfile.certificates?.length" class="gb-items-list">
@@ -704,22 +720,14 @@
                     :key="cert.id"
                     class="gb-earned-row"
                   >
-                    <span class="gb-item-text">📜 {{ cert.title }}</span>
+                    <div class="gb-cert-file-row">
+                      <ion-icon :icon="documentTextOutline" class="cert-doc-icon"></ion-icon>
+                      <span class="gb-item-text">{{ cert.title }}</span>
+                    </div>
                     <button type="button" class="gb-remove-btn" @click="store.removeWorkerCertificate(cert.id)">✕</button>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Rodapé Compacto -->
-            <div class="profile-quick-actions">
-              <button type="button" class="switch-client-card-btn" @click="exitToClientHome">
-                <div class="switch-btn-left">
-                  <ion-icon :icon="swapHorizontalOutline" class="neon-icon"></ion-icon>
-                  <strong>Modo Cliente</strong>
-                </div>
-                <ion-icon :icon="arrowForwardOutline"></ion-icon>
-              </button>
             </div>
           </div>
         </section>
@@ -1000,7 +1008,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import {
   IonPage,
@@ -1032,7 +1040,9 @@ import {
   cardOutline,
   star,
   shieldCheckmarkOutline,
-  personOutline
+  personOutline,
+  cloudUploadOutline,
+  documentTextOutline
 } from 'ionicons/icons';
 import { useAppStore, CATEGORY_CONFIGS } from '@/stores/useAppStore';
 
@@ -1243,21 +1253,50 @@ function formatCurrency(val) {
   }).format(Number(val) || 0);
 }
 
+function syncTabFromQuery(tabQuery) {
+  if (!tabQuery) {
+    store.providerTab = 'servicos';
+    return;
+  }
+  const t = String(tabQuery);
+  if (t === 'impulsos') {
+    store.boostModalOpen = true;
+  } else if (t === 'carteira' || t === 'wallet') {
+    store.providerTab = 'carteira';
+  } else if (t === 'perfil' || t === 'profile') {
+    store.providerTab = 'perfil';
+  } else {
+    store.providerTab = 'servicos';
+  }
+}
+
 onMounted(() => {
   store.role = 'PROVIDER';
   if (route.query.tab) {
-    const t = String(route.query.tab);
-    if (t === 'impulsos') {
-      store.boostModalOpen = true;
-    } else if (t === 'carteira' || t === 'wallet') {
-      store.providerTab = 'carteira';
-    } else if (t === 'perfil' || t === 'profile') {
-      store.providerTab = 'perfil';
-    } else {
-      store.providerTab = 'servicos';
-    }
+    syncTabFromQuery(route.query.tab);
   }
 });
+
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (route.path.startsWith('/provider')) {
+      syncTabFromQuery(newTab);
+    }
+  }
+);
+
+function backToProviderServices() {
+  store.providerTab = 'servicos';
+  if (route.query.tab) {
+    router.replace({ path: '/provider', query: {} });
+  }
+}
+
+function openProviderSubTab(tabName) {
+  store.providerTab = tabName;
+  router.replace({ path: '/provider', query: tabName === 'servicos' ? {} : { tab: tabName } });
+}
 
 function exitToClientHome() {
   store.role = 'CLIENT';
@@ -1388,23 +1427,50 @@ function updateWorkerCategory(catName) {
 
 // ================= PERFIL GAMIFICADO & MÉTODOS DE PAGAMENTO =================
 const profileSubTab = ref('dados'); // 'dados' | 'xp'
+const isEditingSpecialty = ref(false);
+const profileSpecSearch = ref('');
+
+const filteredProfileCategories = computed(() => {
+  const q = profileSpecSearch.value.trim().toLowerCase();
+  if (!q) return allProfileCategories;
+  return allProfileCategories.filter(
+    c =>
+      c.name.toLowerCase().includes(q) ||
+      (c.label && c.label.toLowerCase().includes(q))
+  );
+});
+
+function selectProfileCategoryAndClose(catName) {
+  updateWorkerCategory(catName);
+  isEditingSpecialty.value = false;
+  profileSpecSearch.value = '';
+}
+
 const bioDraft = ref(store.workerProfile.bio || '');
 const newCourseTitle = ref('');
 const newCourseInst = ref('');
-const newCertTitle = ref('');
-const newCertIssuer = ref('');
+const profileCertFileInput = ref(null);
 
-const suggestedCourses = [
-  { title: 'Coquetelaria & Drinks Autorais', institution: 'Instituto Gourmet • 36h' },
-  { title: 'Atendimento VIP em Eventos', institution: 'SENAC Roraima • 24h' },
-  { title: 'Primeiros Socorros & Segurança', institution: 'Cruz Vermelha • 20h' }
-];
+function triggerProfileCertUpload() {
+  if (profileCertFileInput.value) {
+    profileCertFileInput.value.click();
+  }
+}
 
-const suggestedCertificates = [
-  { title: 'Certificado SENAC Hospitalidade', issuer: 'SENAC Nacional • 2026' },
-  { title: 'Certificação Técnica NR-10 / Segurança', issuer: 'SENAI • Verificado' },
-  { title: 'Selo Manipulação Segura ANVISA', issuer: 'Vigilância Sanitária • 2026' }
-];
+function handleProfileCertificateFileUpload(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+  const res = store.addWorkerCertificate(file.name, 'Arquivo enviado • Verificado');
+  if (profileCertFileInput.value) {
+    profileCertFileInput.value.value = '';
+  }
+  if (res.ok) {
+    toastMsg.value = res.leveledUp
+      ? `🎉 +300 XP! Certificado "${file.name}" enviado e Nível ${res.newLevel} alcançado!`
+      : `📄 +300 XP! Certificado "${file.name}" adicionado ao seu perfil.`;
+    showToast.value = true;
+  }
+}
 
 function toggleWorkerPaymentMethod(methodKey) {
   if (!store.workerProfile.paymentMethods) {
@@ -1450,7 +1516,7 @@ function handleSaveGamifiedBio() {
 
 function handleAddCourse() {
   if (!newCourseTitle.value.trim()) {
-    toastMsg.value = 'Informe o nome do curso ou toque em uma sugestão rápida.';
+    toastMsg.value = 'Informe o nome do curso antes de adicionar.';
     showToast.value = true;
     return;
   }
@@ -1461,43 +1527,6 @@ function handleAddCourse() {
     toastMsg.value = res.leveledUp
       ? `🎉 +200 XP pelo novo curso! Você subiu para o Nível ${res.newLevel}!`
       : '🎓 +200 XP adicionados! Curso incluído no seu perfil.';
-    showToast.value = true;
-  }
-}
-
-function quickAddCourse(sug) {
-  const res = store.addWorkerCourse(sug.title, sug.institution);
-  if (res.ok) {
-    toastMsg.value = res.leveledUp
-      ? `🎉 +200 XP! Curso "${sug.title}" adicionado e Nível ${res.newLevel} alcançado!`
-      : `🎓 +200 XP! Curso "${sug.title}" adicionado ao perfil.`;
-    showToast.value = true;
-  }
-}
-
-function handleAddCertificate() {
-  if (!newCertTitle.value.trim()) {
-    toastMsg.value = 'Informe o nome do certificado ou toque em uma sugestão rápida.';
-    showToast.value = true;
-    return;
-  }
-  const res = store.addWorkerCertificate(newCertTitle.value, newCertIssuer.value || 'Certificação Verificada');
-  if (res.ok) {
-    newCertTitle.value = '';
-    newCertIssuer.value = '';
-    toastMsg.value = res.leveledUp
-      ? `🎉 +300 XP pelo certificado! Você subiu para o Nível ${res.newLevel}!`
-      : '📜 +300 XP adicionados! Certificado verificado no perfil.';
-    showToast.value = true;
-  }
-}
-
-function quickAddCertificate(sug) {
-  const res = store.addWorkerCertificate(sug.title, sug.issuer);
-  if (res.ok) {
-    toastMsg.value = res.leveledUp
-      ? `🎉 +300 XP! Certificado "${sug.title}" adicionado e Nível ${res.newLevel} alcançado!`
-      : `📜 +300 XP! Certificado "${sug.title}" adicionado ao perfil.`;
     showToast.value = true;
   }
 }
@@ -2623,6 +2652,20 @@ function handleResetDemo() {
 }
 
 /* ================= PERFIL DO PRESTADOR (GAMIFICADO & MÉTODOS DE PAGAMENTO) ================= */
+.back-services-header-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-radius: 99px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
 .profile-main-card {
   background: #070a10;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2631,6 +2674,122 @@ function handleResetDemo() {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.profile-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.profile-back-btn {
+  background: rgba(212, 255, 36, 0.11);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.active-specialty-banner {
+  background: #0d1320;
+  border: 1px solid rgba(212, 255, 36, 0.32);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.asb-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.asb-badge-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(212, 255, 36, 0.14);
+  color: #D4FF24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.asb-kicker {
+  display: block;
+  font-size: 9px;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.5px;
+}
+
+.asb-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.asb-change-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #D4FF24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.specialty-drawer-box {
+  margin-top: 6px;
+  background: #0b101b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.drawer-cat-tag {
+  background: #131a29;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+.drawer-cat-tag.active {
+  background: #D4FF24;
+  border-color: #D4FF24;
+  color: #05070b;
+  font-weight: 800;
 }
 
 .profile-top-bar {
@@ -2708,6 +2867,60 @@ function handleResetDemo() {
   display: flex;
   flex-direction: column;
   gap: 11px;
+}
+
+.spec-grid-profile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.spec-grid-btn {
+  background: #0f1522;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.spec-grid-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spec-dot-check {
+  font-style: normal;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #05070b;
+  flex-shrink: 0;
+}
+
+.spec-grid-btn.active {
+  background: rgba(212, 255, 36, 0.11);
+  border-color: #D4FF24;
+  color: #ffffff;
+}
+
+.spec-dot-check.on {
+  background: #D4FF24;
+  border-color: #D4FF24;
 }
 
 .pm-minimal-grid {
@@ -2798,6 +3011,69 @@ function handleResetDemo() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.profile-pdf-dropzone {
+  background: #101622;
+  border: 1.5px dashed rgba(212, 255, 36, 0.38);
+  border-radius: 11px;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.profile-pdf-dropzone:active {
+  background: rgba(212, 255, 36, 0.09);
+}
+
+.pdf-drop-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(212, 255, 36, 0.13);
+  color: #D4FF24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  flex-shrink: 0;
+}
+
+.pdf-drop-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.pdf-drop-texts strong {
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.pdf-drop-texts span {
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+
+.gb-cert-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cert-doc-icon {
+  color: #D4FF24;
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .profile-auth-shortcuts {

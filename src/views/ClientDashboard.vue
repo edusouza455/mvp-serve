@@ -18,7 +18,7 @@
           <div class="mobile-nav-actions">
             <button type="button" class="mobile-orders-pill" @click="openOrdersModal">
               <ion-icon :icon="clipboardOutline"></ion-icon>
-              <span>Pedidos</span>
+              <span>Solicitações</span>
               <span class="orders-count-dot">{{ store.ordersList.length }}</span>
             </button>
             <button type="button" class="mobile-icon-btn" aria-label="Mensagens" title="Abrir Chat" @click="openChatModalDirect">
@@ -325,24 +325,31 @@
 
         </div>
 
-        <!-- SEÇÃO MOBILE: PROFISSIONAIS DISPONÍVEIS -->
+        <!-- SEÇÃO MOBILE: RANKING DOS MELHORES AVALIADOS & IMPULSIONADOS -->
         <div id="available-section" class="available-mobile-section">
           <div class="section-heading-row">
             <div class="heading-left">
-              <ion-icon :icon="personOutline" class="section-icon-neon"></ion-icon>
-              <h2 class="available-section-title">{{ activeConfig.plural }}</h2>
+              <ion-icon :icon="trophyOutline" class="section-icon-neon"></ion-icon>
+              <div>
+                <h2 class="available-section-title">Ranking • {{ activeConfig.plural }}</h2>
+                <span class="ranking-sub-caption">Melhores avaliados & perfis com Impulso</span>
+              </div>
             </div>
-            <span class="pros-count-badge">{{ filteredAvailable.length }} disponíveis</span>
+            <span class="ranking-legend-pill">🚀 Destaque</span>
           </div>
 
           <div class="available-pros-stack">
             <div
-              v-for="pro in displayedAvailablePros"
+              v-for="(pro, idx) in displayedAvailablePros"
               :key="pro.id"
               class="pro-profile-card"
+              :class="{ 'boosted-rank-card': pro.isBoosted || idx === 0 }"
             >
               <div class="card-left-block" @click="openProfileModal(pro)">
                 <div class="avatar-status-wrap">
+                  <span class="rank-pos-badge" :class="{ top1: idx === 0, top2: idx === 1, top3: idx === 2 }">
+                    #{{ idx + 1 }}
+                  </span>
                   <img :src="pro.avatar" :alt="pro.nome" class="pro-main-avatar" />
                   <span class="online-dot"></span>
                 </div>
@@ -350,8 +357,11 @@
                 <div class="pro-core-info">
                   <div class="pro-name-verified">
                     <h3 class="pro-full-name">{{ pro.nome }}</h3>
-                    <ion-icon :icon="checkmarkCircle" class="verified-badge"></ion-icon>
-                    <span class="pro-base-price-tag">R$ {{ pro.valorBase }}</span>
+                    <span v-if="pro.isBoosted || idx === 0" class="boost-rank-tag">
+                      <ion-icon :icon="rocketOutline"></ion-icon>
+                      <span>Impulso</span>
+                    </span>
+                    <span v-else class="top-rated-tag">★ Top</span>
                   </div>
 
                   <div class="pro-stats-strip">
@@ -359,29 +369,18 @@
                     <span class="dot-sep">•</span>
                     <span class="jobs-val">{{ pro.servicos }} serv.</span>
                     <span class="dot-sep">•</span>
-                    <span class="jobs-val">{{ pro.exp }}</span>
-                  </div>
-
-                  <!-- Status de Disponibilidade na Agenda do Garçom/Profissional -->
-                  <div class="pro-agenda-status-line">
                     <span
                       v-if="store.isProfessionalFreeOnDate(pro, store.eventForm.data)"
-                      class="pro-agenda-tag free"
+                      class="pro-agenda-inline free"
                     >
-                      <ion-icon :icon="checkmarkCircle"></ion-icon>
-                      <span>Livre na sua data</span>
+                      🟢 Livre na data
                     </span>
                     <span
                       v-else
-                      class="pro-agenda-tag busy"
+                      class="pro-agenda-inline busy"
                     >
-                      <ion-icon :icon="closeCircleOutline"></ion-icon>
-                      <span>Ocupado nesta data</span>
+                      🔴 Ocupado na data
                     </span>
-                  </div>
-
-                  <div class="pro-pills-row">
-                    <span v-for="tag in pro.tags.slice(0, 2)" :key="tag" class="pro-pill">{{ tag }}</span>
                   </div>
                 </div>
               </div>
@@ -456,8 +455,8 @@
                 <span class="stat-lbl">Serviços</span>
               </div>
               <div class="stat-pill-box">
-                <span class="stat-val">R$ {{ activeModalPro.valorBase }}</span>
-                <span class="stat-lbl">Base</span>
+                <span class="stat-val">{{ activeModalPro.exp || '5 anos' }}</span>
+                <span class="stat-lbl">Experiência</span>
               </div>
             </div>
           </div>
@@ -736,7 +735,9 @@ import {
   musicalNotesOutline,
   cafeOutline,
   snowOutline,
-  ribbonOutline
+  ribbonOutline,
+  trophyOutline,
+  rocketOutline
 } from 'ionicons/icons';
 import { useAppStore, CATEGORY_CONFIGS, PROFESSION_GROUPS } from '@/stores/useAppStore';
 import CalendarModal from '@/components/CalendarModal.vue';
@@ -1027,7 +1028,16 @@ const weeklyHighlights = computed(() => {
 
 const filteredAvailable = computed(() => {
   const matches = store.availableProfessionals.filter(p => p.categoria === selectedCategoryName.value);
-  return matches.length ? matches : store.availableProfessionals;
+  const baseList = matches.length ? [...matches] : [...store.availableProfessionals];
+  return baseList.sort((a, b) => {
+    const boostA = a.isBoosted ? 1 : 0;
+    const boostB = b.isBoosted ? 1 : 0;
+    if (boostB !== boostA) return boostB - boostA;
+    const ratingA = parseFloat(String(a.nota || '4.8').replace(',', '.')) || 4.8;
+    const ratingB = parseFloat(String(b.nota || '4.8').replace(',', '.')) || 4.8;
+    if (ratingB !== ratingA) return ratingB - ratingA;
+    return (Number(b.servicos) || 0) - (Number(a.servicos) || 0);
+  });
 });
 
 const displayedAvailablePros = computed(() => {
@@ -1948,7 +1958,7 @@ function reportIssue() {
 
 
 
-/* ================= LISTA DE PROFISSIONAIS DISPONÍVEIS MOBILE ================= */
+/* ================= LISTA DE PROFISSIONAIS (RANKING MELHORES AVALIADOS & IMPULSO) ================= */
 .section-heading-row {
   display: flex;
   align-items: center;
@@ -1959,29 +1969,39 @@ function reportIssue() {
 .heading-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .section-icon-neon {
   color: #D4FF24;
-  font-size: 18px;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
 .available-section-title {
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
+  line-height: 1.2;
 }
 
-.pros-count-badge {
-  background: rgba(34, 197, 94, 0.14);
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  color: #4ade80;
+.ranking-sub-caption {
+  display: block;
+  font-size: 10.5px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.ranking-legend-pill {
+  background: rgba(212, 255, 36, 0.12);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
   font-size: 10px;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 99px;
+  white-space: nowrap;
 }
 
 .available-pros-stack {
@@ -1994,10 +2014,83 @@ function reportIssue() {
   background: #070a10;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 12px;
+  padding: 11px 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
+}
+
+.pro-profile-card.boosted-rank-card {
+  border-color: rgba(212, 255, 36, 0.38);
+  background: linear-gradient(145deg, #080c13 0%, #0d131f 100%);
+}
+
+.rank-pos-badge {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  z-index: 3;
+  background: #1e293b;
+  border: 1.5px solid #070a10;
+  color: #e2e8f0;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 99px;
+  line-height: 1.2;
+}
+
+.rank-pos-badge.top1 {
+  background: #D4FF24;
+  color: #050800;
+}
+
+.rank-pos-badge.top2 {
+  background: #cbd5e1;
+  color: #050800;
+}
+
+.rank-pos-badge.top3 {
+  background: #f59e0b;
+  color: #050800;
+}
+
+.boost-rank-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.4);
+  color: #D4FF24;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.top-rated-tag {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  color: #facc15;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.pro-agenda-inline {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.pro-agenda-inline.free {
+  color: #4ade80;
+}
+
+.pro-agenda-inline.busy {
+  color: #f87171;
 }
 
 .card-left-block {

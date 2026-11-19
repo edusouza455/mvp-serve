@@ -172,25 +172,108 @@
               </div>
             </div>
 
-            <!-- Campos exclusivos de Prestador: Categoria + Recebimento -->
+            <!-- Campos exclusivos de Prestador: Especialidade + Certificado + Recebimento -->
             <template v-if="registerForm.accountType === 'PROVIDER'">
+              <!-- 1. ESPECIALIDADE COM BUSCA + ALGUMAS SUGESTÕES CLICÁVEIS (MENOS POLUÍDO) -->
               <div class="field-item">
-                <label>Especialidade</label>
-                <div class="chips-scroll">
+                <div class="label-row-between">
+                  <label>Especialidade</label>
+                  <span class="selected-cat-hint">Selecionada: {{ registerForm.category }}</span>
+                </div>
+
+                <!-- Input para pesquisar especialidade -->
+                <div class="input-box spec-search-box">
+                  <ion-icon :icon="searchOutline" class="f-icon"></ion-icon>
+                  <input
+                    type="text"
+                    v-model="specialtySearchQuery"
+                    placeholder="Pesquisar especialidade (ex: Cerimonialista, Garçom...)"
+                  />
                   <button
-                    v-for="catName in mainProfessions"
-                    :key="catName"
+                    v-if="specialtySearchQuery"
                     type="button"
-                    class="mini-cat-chip"
-                    :class="{ active: registerForm.category === catName }"
-                    @click="registerForm.category = catName"
+                    class="clear-search-btn"
+                    @click="specialtySearchQuery = ''"
                   >
-                    {{ catName }}
+                    ✕
+                  </button>
+                </div>
+
+                <!-- Mostra apenas algumas sugestões (4 opções) ou o resultado da busca -->
+                <div class="specialty-grid-options">
+                  <button
+                    v-for="prof in visibleProfessionOptions"
+                    :key="prof.name"
+                    type="button"
+                    class="spec-option-btn"
+                    :class="{ active: registerForm.category === prof.name }"
+                    @click="selectRegisterCategory(prof.name)"
+                  >
+                    <div class="spec-opt-left">
+                      <ion-icon :icon="prof.icon" class="spec-opt-icon"></ion-icon>
+                      <span class="spec-opt-name">{{ prof.label }}</span>
+                    </div>
+                    <span class="spec-opt-check" :class="{ on: registerForm.category === prof.name }">
+                      {{ registerForm.category === prof.name ? '✓' : '' }}
+                    </span>
                   </button>
                 </div>
               </div>
 
-              <!-- Métodos de Pagamento Compactos -->
+              <!-- 2. CAMPO DE ENVIO DE CERTIFICADO PARA COMPROVAR A CATEGORIA -->
+              <div class="field-item">
+                <div class="label-row-between">
+                  <label>Certificado para Comprovar Categoria</label>
+                  <span class="xp-bonus-tag">+300 XP</span>
+                </div>
+
+                <!-- Input de arquivo oculto acionado pelo clique -->
+                <input
+                  ref="certFileInputRef"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  class="hidden-file-input"
+                  @change="handleCertificateFileSelect"
+                />
+
+                <!-- Estado: Nenhum arquivo enviado ainda -->
+                <div
+                  v-if="!registerForm.certificateFile"
+                  class="cert-upload-dropzone"
+                  @click="triggerCertificateFileDialog"
+                >
+                  <div class="cert-upload-icon-box">
+                    <ion-icon :icon="cloudUploadOutline"></ion-icon>
+                  </div>
+                  <div class="cert-upload-texts">
+                    <strong>Enviar certificado de {{ registerForm.category }}</strong>
+                    <span>Toque para anexar PDF ou foto do diploma/certificado</span>
+                  </div>
+                </div>
+
+                <!-- Estado: Certificado já anexado -->
+                <div v-else class="cert-attached-card">
+                  <div class="cert-attached-left" @click="triggerCertificateFileDialog">
+                    <div class="cert-ok-icon">
+                      <ion-icon :icon="documentTextOutline"></ion-icon>
+                    </div>
+                    <div class="cert-file-meta">
+                      <strong>{{ registerForm.certificateFile.name }}</strong>
+                      <span>Comprovante de {{ registerForm.category }} • {{ registerForm.certificateFile.sizeLabel }}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="cert-remove-btn"
+                    @click="removeAttachedCertificate"
+                    title="Remover arquivo"
+                  >
+                    <ion-icon :icon="trashOutline"></ion-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Métodos de Pagamento Compactos -->
               <div class="field-item">
                 <label>Como prefere receber?</label>
                 <div class="pm-compact-grid">
@@ -245,7 +328,7 @@
       <ion-toast
         :is-open="toastOpen"
         :message="toastMessage"
-        :duration="2000"
+        :duration="2200"
         position="top"
         @didDismiss="toastOpen = false"
       ></ion-toast>
@@ -254,7 +337,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import {
   IonPage,
@@ -274,7 +357,22 @@ import {
   mailOutline,
   cashOutline,
   qrCodeOutline,
-  cardOutline
+  cardOutline,
+  wineOutline,
+  sparklesOutline,
+  cafeOutline,
+  flameOutline,
+  heartOutline,
+  ribbonOutline,
+  snowOutline,
+  restaurantOutline,
+  flashOutline,
+  waterOutline,
+  constructOutline,
+  searchOutline,
+  cloudUploadOutline,
+  documentTextOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { useAppStore } from '@/stores/useAppStore';
 
@@ -287,23 +385,52 @@ const loginRole = ref('PROVIDER');
 const showPassword = ref(false);
 const toastOpen = ref(false);
 const toastMessage = ref('');
+const certFileInputRef = ref(null);
+const specialtySearchQuery = ref('');
 
 const loginForm = ref({
   username: store.mockCredentials?.username || 'carlos.oliveira@serve.app',
   password: store.mockCredentials?.password || 'serve2026'
 });
 
-const mainProfessions = [
-  'Bartender',
-  'Diarista',
-  'Barista',
-  'Churrasqueiro',
-  'Babá',
-  'Cerimonialista',
-  'Técnico de Ar-Condicionado',
-  'Garçom',
-  'Eletricista'
+const professionOptions = [
+  { name: 'Bartender', label: 'Bartender', icon: wineOutline },
+  { name: 'Diarista', label: 'Diarista', icon: sparklesOutline },
+  { name: 'Churrasqueiro', label: 'Churrasqueiro', icon: flameOutline },
+  { name: 'Técnico de Ar-Condicionado', label: 'Ar-Condicionado', icon: snowOutline },
+  { name: 'Barista', label: 'Barista', icon: cafeOutline },
+  { name: 'Babá', label: 'Babá', icon: heartOutline },
+  { name: 'Cerimonialista', label: 'Cerimonialista', icon: ribbonOutline },
+  { name: 'Garçom', label: 'Garçom', icon: restaurantOutline },
+  { name: 'Eletricista', label: 'Eletricista', icon: flashOutline },
+  { name: 'Encanador', label: 'Encanador', icon: waterOutline },
+  { name: 'Reformas', label: 'Reformas', icon: constructOutline }
 ];
+
+// Exibe apenas 4 opções enxutas por padrão (incluindo a selecionada) ou filtra ao pesquisar
+const visibleProfessionOptions = computed(() => {
+  const q = specialtySearchQuery.value.trim().toLowerCase();
+  if (q) {
+    const matches = professionOptions.filter(
+      p => p.name.toLowerCase().includes(q) || p.label.toLowerCase().includes(q)
+    );
+    if (matches.length > 0) return matches.slice(0, 6);
+    return [
+      {
+        name: specialtySearchQuery.value.trim(),
+        label: specialtySearchQuery.value.trim(),
+        icon: briefcaseOutline
+      }
+    ];
+  }
+
+  const baseFour = professionOptions.slice(0, 4);
+  const currentSelected = professionOptions.find(p => p.name === registerForm.value.category);
+  if (currentSelected && !baseFour.some(p => p.name === currentSelected.name)) {
+    return [currentSelected, ...baseFour.slice(0, 3)];
+  }
+  return baseFour;
+});
 
 const registerForm = ref({
   accountType: 'PROVIDER',
@@ -312,6 +439,7 @@ const registerForm = ref({
   email: 'carlos.oliveira@serve.app',
   category: 'Bartender',
   password: 'serve2026',
+  certificateFile: null,
   paymentMethods: {
     fisico: true,
     pix: true,
@@ -325,6 +453,40 @@ onMounted(() => {
     activeAuthTab.value = 'register';
   }
 });
+
+function selectRegisterCategory(catName) {
+  registerForm.value.category = catName;
+  if (registerForm.value.certificateFile && registerForm.value.certificateFile.isAutoNamed) {
+    const slug = catName.toLowerCase().replace(/\s+/g, '_');
+    registerForm.value.certificateFile.name = `certificado_${slug}.pdf`;
+  }
+}
+
+function triggerCertificateFileDialog() {
+  if (certFileInputRef.value) {
+    certFileInputRef.value.click();
+  }
+}
+
+function handleCertificateFileSelect(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+  const sizeKB = Math.max(12, Math.round(file.size / 1024));
+  registerForm.value.certificateFile = {
+    name: file.name,
+    sizeLabel: sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`,
+    isAutoNamed: false
+  };
+  toastMessage.value = `Certificado "${file.name}" anexado com sucesso!`;
+  toastOpen.value = true;
+}
+
+function removeAttachedCertificate() {
+  registerForm.value.certificateFile = null;
+  if (certFileInputRef.value) {
+    certFileInputRef.value.value = '';
+  }
+}
 
 function toggleRegisterCardMethod() {
   registerForm.value.paymentMethods.cartao = !registerForm.value.paymentMethods.cartao;
@@ -359,7 +521,16 @@ function handleMockRegister() {
     paymentMethods: registerForm.value.paymentMethods
   });
 
-  toastMessage.value = 'Cadastro salvo!';
+  if (registerForm.value.accountType === 'PROVIDER' && registerForm.value.certificateFile) {
+    store.addWorkerCertificate(
+      `Certificado de ${registerForm.value.category} (${registerForm.value.certificateFile.name})`,
+      'Enviado no Cadastro • Verificado'
+    );
+  }
+
+  toastMessage.value = registerForm.value.certificateFile
+    ? 'Cadastro salvo + Certificado enviado (+300 XP)!'
+    : 'Cadastro salvo!';
   toastOpen.value = true;
 
   setTimeout(() => {
@@ -371,7 +542,7 @@ function handleMockRegister() {
       store.role = 'CLIENT';
       router.push('/home');
     }
-  }, 250);
+  }, 280);
 }
 
 function goHome() {
@@ -555,7 +726,7 @@ function goHome() {
 .fields-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 11px;
 }
 
 .grid-2-cols {
@@ -567,13 +738,37 @@ function goHome() {
 .field-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
-.field-item > label {
+.field-item > label,
+.label-row-between > label {
   font-size: 11px;
   font-weight: 700;
   color: #cbd5e1;
+}
+
+.label-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.selected-cat-hint {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #D4FF24;
+}
+
+.xp-bonus-tag {
+  background: rgba(212, 255, 36, 0.14);
+  border: 1px solid rgba(212, 255, 36, 0.35);
+  color: #D4FF24;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 99px;
 }
 
 .input-box {
@@ -607,7 +802,8 @@ function goHome() {
   font-weight: 600;
 }
 
-.eye-btn {
+.eye-btn,
+.clear-search-btn {
   background: transparent;
   border: none;
   color: #9ca3af;
@@ -616,36 +812,202 @@ function goHome() {
   cursor: pointer;
 }
 
-/* Especialidades Scroll */
-.chips-scroll {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: none;
+.spec-search-box {
+  height: 38px;
+  background: #0d121c;
 }
 
-.chips-scroll::-webkit-scrollbar {
+/* ================= ESPECIALIDADES EM GRADE CLICÁVEL (2 COLUNAS VISÍVEIS) ================= */
+.specialty-grid-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.spec-option-btn {
+  background: #111723;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-align: left;
+}
+
+.spec-option-btn:active {
+  transform: scale(0.98);
+}
+
+.spec-opt-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.spec-opt-icon {
+  font-size: 16px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.spec-opt-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spec-opt-check {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #050800;
+  flex-shrink: 0;
+}
+
+.spec-option-btn.active {
+  background: rgba(212, 255, 36, 0.11);
+  border-color: #D4FF24;
+  color: #ffffff;
+}
+
+.spec-option-btn.active .spec-opt-icon {
+  color: #D4FF24;
+}
+
+.spec-opt-check.on {
+  background: #D4FF24;
+  border-color: #D4FF24;
+}
+
+/* ================= UPLOAD DE CERTIFICADO DA CATEGORIA ================= */
+.hidden-file-input {
   display: none;
 }
 
-.mini-cat-chip {
-  background: #111723;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 6px 10px;
-  border-radius: 99px;
-  white-space: nowrap;
+.cert-upload-dropzone {
+  background: #101622;
+  border: 1.5px dashed rgba(212, 255, 36, 0.38);
+  border-radius: 12px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cert-upload-dropzone:active {
+  background: rgba(212, 255, 36, 0.08);
+}
+
+.cert-upload-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(212, 255, 36, 0.12);
+  color: #D4FF24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cert-upload-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cert-upload-texts strong {
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.cert-upload-texts span {
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+
+.cert-attached-card {
+  background: rgba(212, 255, 36, 0.09);
+  border: 1px solid #D4FF24;
+  border-radius: 12px;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cert-attached-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
   cursor: pointer;
 }
 
-.mini-cat-chip.active {
+.cert-ok-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   background: #D4FF24;
-  border-color: #D4FF24;
   color: #050800;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cert-file-meta {
+  min-width: 0;
+}
+
+.cert-file-meta strong {
+  display: block;
+  font-size: 12px;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cert-file-meta span {
+  display: block;
+  font-size: 10px;
+  color: #D4FF24;
+}
+
+.cert-remove-btn {
+  background: rgba(248, 113, 113, 0.14);
+  border: none;
+  color: #f87171;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* Métodos de Pagamento em 3 Colunas Compactas */
@@ -727,7 +1089,8 @@ function goHome() {
 }
 
 @media (max-width: 350px) {
-  .grid-2-cols {
+  .grid-2-cols,
+  .specialty-grid-options {
     grid-template-columns: 1fr;
   }
 }
